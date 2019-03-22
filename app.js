@@ -1,11 +1,35 @@
+'use strict';
+
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
-var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+mongoose.Promise = require('bluebird');
+const passport = require('passport');
+
+const apiVersion = 'brew_io_api_v1.0.0';
 
 var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+const usersRouter = require('./routes/users');
+const recipeRouter = require('./routes/recipe');
+const grainsRouter = require('./routes/library/grains');
+const hopsRouter = require('./routes/library/hops');
+const yeastRouter = require('./routes/library/yeast');
+const styleRouter = require('./routes/library/style');
+
+const connect = mongoose.connect(
+  process.env.MONGO_URL,
+  {
+    keepAlive: true,
+    keepAliveInitialDelay: 300000,
+    useNewUrlParser: true
+  }
+);
+connect.then(() => {
+  console.log('Database:Server connection established');
+}, error => console.log(error));
 
 var app = express();
 
@@ -13,14 +37,21 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
+app.use(bodyParser.json());
 app.use(logger('dev'));
 app.use(express.json());
+app.use(passport.initialize());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use(`/${apiVersion}/library/grains`, grainsRouter);
+app.use(`/${apiVersion}/library/hops`, hopsRouter);
+app.use(`/${apiVersion}/library/yeast`, yeastRouter);
+app.use(`/${apiVersion}/library/style`, styleRouter);
+
+app.use(`/${apiVersion}/users`, usersRouter);
+app.use(`/${apiVersion}/recipes`, recipeRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
