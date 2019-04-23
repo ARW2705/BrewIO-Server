@@ -7,6 +7,7 @@
 var app = require('../app');
 var debug = require('debug')('brewio-server:server');
 var http = require('http');
+const fs = require('fs');
 const https = require('https');
 
 /**
@@ -22,14 +23,14 @@ app.set('secPort', port+443);
 **/
 
 const options = {
-  key: process.env.PRIVATE_KEY,
-  cert: process.env.CERTIFICATE
+  cert: fs.readFileSync('/etc/letsencrypt/live/andrew-wanex.com/fullchain.pem'),
+  key: fs.readFileSync('/etc/letsencrypt/live/andrew-wanex.com/privkey.pem')
 };
 
 const httpsServer = https.createServer(options, app);
 
 httpsServer.listen(app.get('secPort'), () => {
-  console.log(`HTTPS server listening on port : ${app.get('secPort')}`);
+  console.log(`BrewIO HTTPS server listening on port : ${app.get('secPort')}`);
 });
 httpsServer.on('error', onError);
 httpsServer.on('listening', onListening);
