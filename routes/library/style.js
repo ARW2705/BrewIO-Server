@@ -34,7 +34,7 @@ styleRouter.route('/')
 
 styleRouter.route('/:styleId')
   .get((req, res, next) => {
-    Malts.findById(req.params.styleId)
+    Style.findById(req.params.styleId)
       .then(style => {
         if (style != null) {
           res.statusCode = 200;
