@@ -9,6 +9,14 @@ const yeastSchema = new Schema({
     required: true,
     unique: true
   },
+  brand: {
+    type: String,
+    required: true
+  },
+  form: {
+    type: String,
+    required: true
+  },
   description: {
     type: String,
     required: true
@@ -19,7 +27,7 @@ const yeastSchema = new Schema({
   },
   flocculation: {
     type: String,
-    required: true
+    default: ''
   },
   optimumTemperature: {
     type: [Number],
@@ -29,15 +37,8 @@ const yeastSchema = new Schema({
     type: [Number]
   },
   recommendedStyles: [{
-    style: {
-      type: Schema.Types.ObjectId,
-      ref: 'Style',
-      unique: true
-    },
-    ideal: {
-      type: Boolean,
-      default: false
-    }
+    type: Schema.Types.ObjectId,
+    ref: 'Style'
   }]
 }, {
   timestamps: true
