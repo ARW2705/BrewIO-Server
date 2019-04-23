@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const passport = require('passport');
 
 const User = require('../models/user');
+const RecipeMaster = require('../models/recipe-master');
 const authenticate = require('../authenticate');
 
 const userRouter = express.Router();
@@ -54,6 +55,7 @@ userRouter.post('/signup', (req, res, next) => {
       } else {
         if (req.body.firstname) user.firstname = req.body.firstname;
         if (req.body.lastname) user.lastname = req.body.lastname;
+        if (req.body.email) user.email = req.body.email;
         user.save((error, user) => {
           if (error) {
             res.statusCode = 500;
@@ -70,5 +72,58 @@ userRouter.post('/signup', (req, res, next) => {
       }
     });
 });
+
+userRouter.route('/profile')
+  .get(authenticate.verifyUser, (req, res, next) => {
+    User.findById(req.user.id)
+      .populate({
+        path: 'masterList',
+        populate: {
+          path: 'style'
+        }
+      })
+      .populate({
+        path: 'masterList',
+        populate: {
+          path: 'recipes',
+          populate: {
+            path: 'grains.grainType'
+          }
+        }
+      })
+      .populate({
+        path: 'masterList',
+        populate: {
+          path: 'recipes',
+          populate: {
+            path: 'hops.hopsType'
+          }
+        }
+      })
+      .populate({
+        path: 'masterList',
+        populate: {
+          path: 'recipes',
+          populate: {
+            path: 'yeast.yeastType'
+          }
+        }
+      })
+      .then(user => {
+        const response = {
+          username: user.username,
+          firstname: user.firstname,
+          lastname: user.lastname,
+          email: user.email,
+          masterList: user.masterList
+        };
+        res.statusCode = 200;
+        res.setHeader('content-type', 'application/json');
+        res.json(response);
+      })
+      .catch(error => next(error));
+  });
+
+// TODO add user profile routes
 
 module.exports = userRouter;
