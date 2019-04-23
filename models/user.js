@@ -23,7 +23,12 @@ const userSchema = new Schema({
     type: Boolean,
     default: false
   },
-  masterList: [recipeMasterSchema]
+  masterList: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'RecipeMaster'
+    }
+  ]
 }, {
   timestamps: true
 });
