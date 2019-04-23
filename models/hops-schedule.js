@@ -18,7 +18,11 @@ const hopsScheduleSchema = new Schema({
   },
   dryHop: {
     type: Boolean,
-  }
+    default: false
+  },
+  notes: [{
+    type: String
+  }]
 });
 
 module.exports = hopsScheduleSchema;
