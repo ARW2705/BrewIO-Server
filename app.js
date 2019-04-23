@@ -14,6 +14,7 @@ const apiVersion = 'brew_io_api_v1.0.0';
 var indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const recipeRouter = require('./routes/recipe');
+const processRouter = require('./routes/process');
 const grainsRouter = require('./routes/library/grains');
 const hopsRouter = require('./routes/library/hops');
 const yeastRouter = require('./routes/library/yeast');
@@ -28,7 +29,7 @@ const connect = mongoose.connect(
   }
 );
 connect.then(() => {
-  console.log('Database:Server connection established');
+  console.log('BrewIO database connection established');
 }, error => console.log(error));
 
 var app = express();
@@ -52,14 +53,27 @@ app.use(`/${apiVersion}/library/style`, styleRouter);
 
 app.use(`/${apiVersion}/users`, usersRouter);
 app.use(`/${apiVersion}/recipes`, recipeRouter);
+app.use(`/${apiVersion}/process`, processRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
 });
 
+app.use((err, req, res, next) => {
+  if (err.name == 'ValidationError' || err.name == 'MongoError') {
+    console.log('Mongo error', err);
+    res.statusCode = 503;
+    res.setHeader('content-type', 'application/json');
+    res.json(err);
+  } else {
+    next(err);
+  }
+});
+
 // error handler
 app.use(function(err, req, res, next) {
+  console.log('Error', err);
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
