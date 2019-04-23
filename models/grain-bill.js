@@ -16,7 +16,10 @@ const grainBillSchema = new Schema({
   },
   mill: {
     type: Number
-  }
+  },
+  notes: [{
+    type: String
+  }]
 });
 
 module.exports = grainBillSchema;
