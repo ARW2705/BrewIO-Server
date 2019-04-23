@@ -16,7 +16,10 @@ const yeastBatchSchema = new Schema({
     type: Boolean,
     required: true,
     default: false
-  }
+  },
+  notes: [{
+    type: String
+  }]
 });
 
 module.exports = yeastBatchSchema;
