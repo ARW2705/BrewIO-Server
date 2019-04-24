@@ -14,15 +14,18 @@ const recipeSchema = new Schema({
     type: String,
     default: 'initial'
   },
-  notes: {
-    type: String,
-    default: ''
-  },
+  notes: [{
+    type: String
+  }],
   isActive: {
     type: Boolean,
     default: false
   },
   isFavorite: {
+    type: Boolean,
+    default: false
+  },
+  isMaster: {
     type: Boolean,
     default: false
   },
@@ -39,17 +42,15 @@ const recipeSchema = new Schema({
   },
   batchVolume: {
     type: Number,
-    required: true,
-    default: 5
+    required: true
   },
   boilVolume: {
     type: Number,
-    required: true,
-    default: 6
+    required: true
   },
   mashVolume: {
     type: Number,
-    default: 6.5
+    required: true
   },
   originalGravity: {
     type: Number,
@@ -71,13 +72,17 @@ const recipeSchema = new Schema({
     type: Number,
     required: true
   },
+  currentStep: {
+    type: Number,
+    default: 0
+  },
   grains: [grainBillSchema],
   hops: [hopsScheduleSchema],
   yeast: [yeastBatchSchema],
   otherIngredients: [otherIngredientsSchema],
-  processSchedule: processSchema
+  processSchedule: [processSchema]
 }, {
   timestamps: true
 });
 
-module.exports = recipeSchema;
+module.exports = mongoose.model('Recipe', recipeSchema);
