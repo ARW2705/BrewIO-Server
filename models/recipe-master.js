@@ -8,17 +8,15 @@ const recipeSchema = require('./recipe');
 const recipeMasterSchema = new Schema({
   name: {
     type: String,
-    required: true,
-    unique: true
+    required: true
   },
   style: {
     type: Schema.Types.ObjectId,
     ref: 'Style'
   },
-  notes: {
-    type: String,
-    default: ''
-  },
+  notes: [{
+    type: String
+  }],
   master: {
     type: Schema.Types.ObjectId,
     ref: 'Recipe'
@@ -31,9 +29,16 @@ const recipeMasterSchema = new Schema({
     type: Boolean,
     default: false
   },
-  recipes: [recipeSchema]
+  isFriendsOnly: {
+    type: Boolean,
+    default: false
+  },
+  recipes: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Recipe'
+  }]
 }, {
   timestamps: true
 });
 
-module.exports = recipeMasterSchema;
+module.exports = mongoose.model('RecipeMaster', recipeMasterSchema);
