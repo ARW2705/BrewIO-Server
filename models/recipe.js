@@ -17,10 +17,6 @@ const recipeSchema = new Schema({
   notes: [{
     type: String
   }],
-  isActive: {
-    type: Boolean,
-    default: false
-  },
   isFavorite: {
     type: Boolean,
     default: false
@@ -71,10 +67,6 @@ const recipeSchema = new Schema({
   SRM: {
     type: Number,
     required: true
-  },
-  currentStep: {
-    type: Number,
-    default: 0
   },
   grains: [grainBillSchema],
   hops: [hopsScheduleSchema],

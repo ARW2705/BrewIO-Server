@@ -15,12 +15,6 @@ const processSchema = new Schema({
   description: {
     type: String
   },
-  startDatetime: {
-    type: Date
-  },
-  alerts: [{
-    type: Date
-  }],
   splitInterval: {
     type: Number,
     default: 1

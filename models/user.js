@@ -5,6 +5,7 @@ const Schema = mongoose.Schema;
 const passportLocalMongoose = require('passport-local-mongoose');
 
 const recipeMasterSchema = require('../models/recipe-master');
+const inProgressSchema = require('../models/in-progress');
 
 const userSchema = new Schema({
   firstname: {
@@ -17,7 +18,7 @@ const userSchema = new Schema({
   },
   email: {
     type: String,
-    default: ''
+    required: true
   },
   admin: {
     type: Boolean,
@@ -27,6 +28,13 @@ const userSchema = new Schema({
     {
       type: Schema.Types.ObjectId,
       ref: 'RecipeMaster'
+    }
+  ],
+  inProgressList: [inProgressSchema],
+  friendList: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
     }
   ]
 }, {
