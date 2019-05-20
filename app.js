@@ -30,6 +30,8 @@ const connect = mongoose.connect(
 );
 connect.then(() => {
   console.log('BrewIO database connection established');
+  const db = mongoose.connection;
+  db.users.createIndex({'username': 'text'});
 }, error => console.log(error));
 
 var app = express();
