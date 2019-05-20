@@ -122,6 +122,15 @@ userRouter.route('/profile')
         res.json(response);
       })
       .catch(error => next(error));
+  })
+  .patch(authenticate.verifyUser, (req, res, next) => {
+    User.findByIdAndUpdate(req.user.id, req.body, {new: true})
+      .then(update => {
+        res.statusCode = 200;
+        res.setHeader('content-type', 'application/json');
+        res.json(update);
+      })
+      .catch(error => next(error));
   });
 
 // TODO add user profile routes
