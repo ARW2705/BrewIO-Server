@@ -12,7 +12,7 @@ const processSchema = require('./process');
 const recipeSchema = new Schema({
   variantName: {
     type: String,
-    default: 'initial'
+    default: 'Initial'
   },
   notes: [{
     type: String
@@ -35,6 +35,14 @@ const recipeSchema = new Schema({
   brewingType: {
     type: String,
     required: true
+  },
+  boilDuration: {
+    type: Number,
+    default: 60
+  },
+  mashDuration: {
+    type: Number,
+    default: 60
   },
   batchVolume: {
     type: Number,
