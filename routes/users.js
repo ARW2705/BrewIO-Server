@@ -51,8 +51,9 @@ userRouter.post('/signup', (req, res, next) => {
       if (error) {
         res.statusCode = 500;
         res.setHeader('content-type', 'application/json');
-        res.json({error: error});
+        res.json(error);
       } else {
+        console.log('signup', user, req.body);
         if (req.body.firstname) user.firstname = req.body.firstname;
         if (req.body.lastname) user.lastname = req.body.lastname;
         if (req.body.email) user.email = req.body.email;
@@ -115,7 +116,8 @@ userRouter.route('/profile')
           firstname: user.firstname,
           lastname: user.lastname,
           email: user.email,
-          masterList: user.masterList
+          masterList: user.masterList,
+          inProgressList: user.inProgressList
         };
         res.statusCode = 200;
         res.setHeader('content-type', 'application/json');
