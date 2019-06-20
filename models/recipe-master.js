@@ -36,7 +36,11 @@ const recipeMasterSchema = new Schema({
   recipes: [{
     type: Schema.Types.ObjectId,
     ref: 'Recipe'
-  }]
+  }],
+  owner: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }
 }, {
   timestamps: true
 });
