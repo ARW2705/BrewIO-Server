@@ -9,11 +9,10 @@ const alertSchema = new Schema({
     required: true
   },
   description: {
-    type: String,
-    required: true
+    type: String
   },
   datetime: {
-    type: Date,
+    type: String,
     required: true
   }
 });

@@ -11,9 +11,6 @@ const inProgressSchema = new Schema({
     type: Number,
     default: 0
   },
-  startDateTime: {
-    type: Date
-  },
   alerts: [alertSchema],
   recipe: {
     type: Schema.Types.ObjectId,
