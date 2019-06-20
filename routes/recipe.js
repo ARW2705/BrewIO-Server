@@ -209,6 +209,7 @@ recipeRouter.route('/private/user')
           req.body.recipe.isMaster = true;
           return Recipe.create(req.body.recipe)
             .then(newRecipe => {
+              req.body.master['owner'] = req.user.id;
               req.body.master['master'] = newRecipe._id;
               req.body.master['recipes'] = [newRecipe];
               return RecipeMaster.create(req.body.master)
@@ -457,7 +458,11 @@ recipeRouter.route('/private/master/:masterRecipeId/recipe/:recipeId')
           return RecipeMaster.findById(req.params.masterRecipeId)
             .then(master => {
               const recipe = master.recipes.find(item => item.equals(req.params.recipeId));
-              if (recipe) {
+              if (recipe && req.body.isMaster == false && master.recipes.length < 2) {
+                const err = new Error('At least one recipe must be set as master');
+                err.status = 409;
+                return next(err);
+              } else if (recipe) {
                 return Recipe.findByIdAndUpdate(
                   recipe,
                   req.body,
