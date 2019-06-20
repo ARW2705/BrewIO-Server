@@ -27,6 +27,9 @@ const processSchema = new Schema({
     type: Boolean,
     default: false
   },
+  startDatetime: {
+    type: Date
+  },
   expectedDuration: {
     type: Number
   }
