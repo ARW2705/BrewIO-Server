@@ -143,7 +143,13 @@ processRouter.route('/in-progress/:batchId/next')
       .then(user => {
         const batch = user.inProgressList.find(item => item.equals(req.params.batchId));
         if (batch) {
-          batch.currentStep++;
+          let nextStep = batch.currentStep + 1;
+          if (batch.schedule[batch.currentStep].concurrent) {
+            while (batch.schedule[nextStep].concurrent) {
+              nextStep++;
+            }
+          }
+          batch.currentStep = nextStep;
           user.save()
             .then(dbres => {
               res.statusCode = 200;
