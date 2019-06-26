@@ -12,7 +12,7 @@ const userRouter = express.Router();
 
 userRouter.use(bodyParser.json());
 
-userRouter.get('/checkJWTToken', (req, res) => {
+userRouter.get('/checkJWToken', (req, res) => {
   passport.authenticate('jwt', {session: false}, (error, user, data) => {
     if (error) return next(error);
     if (!user) {
