@@ -34,9 +34,9 @@ grainsRouter.route('/')
 
 grainsRouter.route('/:grainsId')
   .get((req, res, next) => {
-    Malts.findById(req.params.grainsId)
+    Grains.findById(req.params.grainsId)
       .then(grains => {
-        if (grains != null) {
+        if (grains !== null) {
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
           res.json(grains);
@@ -49,7 +49,7 @@ grainsRouter.route('/:grainsId')
   .patch(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Grains.findByIdAndUpdate(req.params.grainsId, req.body, {new: true})
       .then(grains => {
-        if (grains != null) {
+        if (grains !== null) {
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
           res.json(grains);
@@ -62,7 +62,7 @@ grainsRouter.route('/:grainsId')
   .delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Grains.findByIdAndDelete(req.params.grainsId)
       .then(dbres => {
-        if (dbres != null) {
+        if (dbres !== null) {
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
           res.json(dbres);

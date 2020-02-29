@@ -42,7 +42,7 @@ hopsRouter.route('/:hopsId')
       .populate('usedFor')
       .populate('alternatives')
       .then(hops => {
-        if (hops != null) {
+        if (hops !== null) {
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
           res.json(hops);
@@ -88,7 +88,7 @@ hopsRouter.route('/:hopsId')
                 calls.push(callback => {
                   Hops.findOne({name: name})
                     .then(hops => {
-                      if (hops != null) {
+                      if (hops !== null) {
                         if (!hopsToUpdate.alternatives.find(elem => elem.equals(hops.id))) {
                           hopsToUpdate.alternatives.push(hops.id);
                         }
@@ -120,7 +120,7 @@ hopsRouter.route('/:hopsId')
     } else {
       Hops.findByIdAndUpdate(req.params.hopsId, req.body, {new: true})
         .then(hops => {
-          if (hops != null) {
+          if (hops !== null) {
             res.statusCode = 200;
             res.setHeader('content-type', 'application/json');
             res.json(hops);
@@ -134,7 +134,7 @@ hopsRouter.route('/:hopsId')
   .delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Hops.findByIdAndDelete(req.params.hopsId)
       .then(dbres => {
-        if (dbres != null) {
+        if (dbres !== null) {
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
           res.json(dbres);

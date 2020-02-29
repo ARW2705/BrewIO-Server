@@ -36,7 +36,7 @@ styleRouter.route('/:styleId')
   .get((req, res, next) => {
     Style.findById(req.params.styleId)
       .then(style => {
-        if (style != null) {
+        if (style !== null) {
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
           res.json(style);
@@ -49,7 +49,7 @@ styleRouter.route('/:styleId')
   .patch(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Style.findByIdAndUpdate(req.params.styleId, req.body, {new: true})
       .then(style => {
-        if (style != null) {
+        if (style !== null) {
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
           res.json(style);
@@ -62,7 +62,7 @@ styleRouter.route('/:styleId')
   .delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Style.findByIdAndDelete(req.params.styleId)
       .then(dbres => {
-        if (dbres != null) {
+        if (dbres !== null) {
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
           res.json(dbres);

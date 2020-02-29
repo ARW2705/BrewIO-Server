@@ -40,7 +40,7 @@ yeastRouter.route('/:yeastId')
     Yeast.findById(req.params.yeastId)
       .populate('recommendedStyles')
       .then(yeast => {
-        if (yeast != null) {
+        if (yeast !== null) {
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
           res.json(yeast);
@@ -55,12 +55,12 @@ yeastRouter.route('/:yeastId')
       Yeast.findById(req.params.yeastId)
         .then(yeastToUpdate => {
           const calls = [];
-          if (yeastToUpdate != null) {
+          if (yeastToUpdate !== null) {
             req.body.styles.forEach(name => {
               calls.push(callback => {
                 Styles.findOne({name: name})
                   .then(style => {
-                    if (style != null) {
+                    if (style !== null) {
                       if (!yeastToUpdate.recommendedStyles.find(elem => elem.equals(style.id))) {
                         yeastToUpdate.recommendedStyles.push(style.id);
                       }
@@ -91,7 +91,7 @@ yeastRouter.route('/:yeastId')
     } else {
       Yeast.findByIdAndUpdate(req.params.yeastId, req.body, {new: true})
         .then(yeast => {
-          if (yeast != null) {
+          if (yeast !== null) {
             res.statusCode = 200;
             res.setHeader('content-type', 'application/json');
             res.json(yeast);
@@ -105,7 +105,7 @@ yeastRouter.route('/:yeastId')
   .delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Yeast.findByIdAndDelete(req.params.yeastId)
       .then(dbres => {
-        if (dbres != null) {
+        if (dbres !== null) {
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
           res.json(dbres);
