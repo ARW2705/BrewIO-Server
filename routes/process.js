@@ -15,19 +15,60 @@ const processRouter = express.Router();
 
 processRouter.use(bodyParser.json());
 
+processRouter.route('/in-progress')
+  .get(authenticate.verifyUser, (req, res, next) => {
+    User.findById(req.user.id)
+      .then(user => {
+        if (user !== null) {
+          return InProgress.find({'_id': { $in: user.inProgressList }})
+            .then(activeBatchesList => {
+              res.statusCode = 200;
+              res.setHeader('content-type', 'application/json');
+              res.json(activeBatchesList);
+            })
+        } else {
+          return next(createError(404, 'User not found'));
+        }
+      })
+      .catch(error => next(error));
+  });
+
 processRouter.route('/in-progress/:batchId')
   .get(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
-        const batch = user.inProgressList.find(item => item.equals(req.params.batchId));
-        if (batch) {
-          res.statusCode = 200;
-          res.setHeader('content-type', 'application/json');
-          res.json(batch);
+        if (user !== null) {
+          if (user.inProgressList.findIndex(item => item.equals(req.params.batchId)) !== -1) {
+            return InProgress.findById(req.params.batchId)
+              .populate('owner')
+              .populate({
+                path: 'recipe',
+                populate: {
+                  path: 'grains.grainType'
+                }
+              })
+              .populate({
+                path: 'recipe',
+                populate: {
+                  path: 'hops.hopsType'
+                }
+              })
+              .populate({
+                path: 'recipe',
+                populate: {
+                  path: 'yeast.yeastType'
+                }
+              })
+              .then(batch => {
+                res.statusCode = 200;
+                res.setHeader('content-type', 'application/json');
+                res.json(batch);
+              })
+          } else {
+            return next(createError(404, 'Batch not found'));
+          }
         } else {
-          const err = new Error(`Batch with id ${req.params.batchId} not found`);
-          err.status = 404;
-          return next(err);
+          return next(createError(404, 'User not found'));
         }
       })
       .catch(error => next(error));
@@ -35,19 +76,38 @@ processRouter.route('/in-progress/:batchId')
   .patch(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
-        const batch = user.inProgressList.find(item => item.equals(req.params.batchId));
-        if (batch) {
-          batch.currentStep = req.body.currentStep;
-          return user.save()
-            .then(() => {
-              res.statusCode = 200;
-              res.setHeader('content-type', 'application/json');
-              res.json({})
-            });
+        if (user !== null) {
+          if (user.inProgressList.findIndex(item => item.equals(req.params.batchId)) !== -1) {
+            return InProgress.findByIdAndUpdate(req.params.batchId, req.body, {new: true})
+              .populate('owner')
+              .populate({
+                path: 'recipe',
+                populate: {
+                  path: 'grains.grainType'
+                }
+              })
+              .populate({
+                path: 'recipe',
+                populate: {
+                  path: 'hops.hopsType'
+                }
+              })
+              .populate({
+                path: 'recipe',
+                populate: {
+                  path: 'yeast.yeastType'
+                }
+              })
+              .then(updatedBatch => {
+                res.statusCode = 200;
+                res.setHeader('content-type', 'application/json');
+                res.json(updatedBatch);
+              });
+          } else {
+            return next(createError(400, 'Batch does not belong to user'));
+          }
         } else {
-          const err = new Error(`Batch with id ${req.params.batchId} not found`);
-          err.status = 404;
-          return next(err);
+          return next(createError(404, 'User not found'));
         }
       })
       .catch(error => next(error));
@@ -55,22 +115,28 @@ processRouter.route('/in-progress/:batchId')
   .delete(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
-        const toDeleteIndex = user.inProgressList.findIndex(item => item.equals(req.params.batchId));
-        if (toDeleteIndex != -1) {
-          user.inProgressList.splice(toDeleteIndex, 1);
-          return user.save()
-            .then(dbres => {
-              res.statusCode = 200;
-              res.setHeader('content-type', 'application/json');
-              res.json({
-                success: true,
-                updatedList: user.inProgressList
+        if (user !== null) {
+          const toDeleteIndex = user.inProgressList.findIndex(item => item.equals(req.params.batchId));
+          if (toDeleteIndex !== -1) {
+            return InProgress.findByIdAndDelete(req.params.batchId)
+              .then(dbres => {
+                if (dbres != null) {
+                  user.inProgressList.splice(toDeleteIndex, 1);
+                  return user.save()
+                    .then(_userDBRes => {
+                      res.statusCode = 200;
+                      res.setHeader('content-type', 'application/json');
+                      res.json(dbres);
+                    });
+                } else {
+                  return next(createError(404, 'Batch not found'));
+                }
               });
-            });
+          } else {
+            return next(createError(400, 'Batch does not belong to user'));
+          }
         } else {
-          const err = new Error(`Batch with id ${req.params.batchId} not found`);
-          err.status = 404;
-          return next(err);
+          return next(createError(404, 'User not found'));
         }
       })
       .catch(error => next(error));
@@ -80,22 +146,28 @@ processRouter.route('/in-progress/:batchId/step/:stepId')
   .get(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
-        const batch = user.inProgressList.find(item => item.equals(req.params.batchId));
-        if (batch) {
-          const step = batch.schedule.find(item => item.equals(req.params.stepId));
-          if (step) {
-            res.statusCode = 200;
-            res.setHeader('content-type', 'application/json');
-            res.json(step);
+        if (user !== null) {
+          if (user.inProgressList.findIndex(item => item.equals(req.params.batchId)) !== -1) {
+            return InProgress.findById(req.params.batchId)
+              .then(batch => {
+                if (batch !== null) {
+                  const step = batch.schedule.find(_step => _step.equals(req.params.stepId));
+                  if (step !== undefined) {
+                    res.statusCode = 200;
+                    res.setHeader('content-type', 'application/json');
+                    res.json(step);
+                  } else {
+                    return next(createError(404, 'Step not found'));
+                  }
+                } else {
+                  return next(createError(404, 'Batch not found'));
+                }
+              });
           } else {
-            const err = new Error(`Step with id ${req.params.stepId} not found`);
-            err.status = 404;
-            return next(err);
+            return next(createError(400, 'Batch does not belong to user'));
           }
         } else {
-          const err = new Error(`Batch with id ${req.params.batchId} not found`);
-          err.status = 404;
-          return next(err);
+          return next(createError(404, 'User not found'));
         }
       })
       .catch(error => next(error))
@@ -103,35 +175,37 @@ processRouter.route('/in-progress/:batchId/step/:stepId')
   .patch(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
-        const batch = user.inProgressList.find(item => item.equals(req.params.batchId));
-        if (batch) {
-          const stepIndex = batch.schedule.findIndex(item => item.equals(req.params.stepId));
-          if (stepIndex != -1) {
-            if (req.body.alerts) {
-              const alertsToAdd = batch.alerts.filter(alert => {
-                return alert.title != req.body.alerts[0].title
-              })
-              .concat(req.body.alerts);
-              batch.alerts = alertsToAdd;
-            }
-            if (req.body.startDatetime) {
-              batch.schedule[stepIndex]['startDatetime'] = req.body.startDatetime;
-            }
-            return user.save()
-              .then(dbres => {
-                res.statusCode = 200;
-                res.setHeader('content-type', 'application/json');
-                res.json(batch);
+        if (user !== null) {
+          if (user.inProgressList.findIndex(item => item.equals(req.params.batchId)) !== -1) {
+            return InProgress.findById(req.params.batchId)
+              .then(batch => {
+                const stepIndex = batch.schedule.findIndex(_step => _step.equals(req.params.stepId));
+                if (stepIndex !== undefined) {
+                  if (req.body.alerts) {
+                    const alertsToAdd = batch.alerts.filter(alert => {
+                      return alert.title !== req.body.alerts[0].title
+                    })
+                    .concat(req.body.alerts);
+                    batch.alerts = alertsToAdd;
+                    if (req.body.startDatetime) {
+                      batch.schedule[stepIndex]['startDatetime'] = req.body.startDatetime;
+                    }
+                    return batch.save()
+                      .then(updatedBatch => {
+                        res.statusCode = 200;
+                        res.setHeader('content-type', 'application/json');
+                        res.json(updatedBatch);
+                      });
+                  }
+                } else {
+                  return next(createError(404, 'Step not found'));
+                }
               });
           } else {
-            const err = new Error(`Step with id ${req.params.stepId} not found`);
-            err.status = 404;
-            return next(err);
+            return next(createError(400, 'Batch does not belong to user'));
           }
         } else {
-          const err = new Error(`Batch with id ${req.params.batchId} not found`);
-          err.status = 404;
-          return next(err);
+          return next(createError(404, 'User not found'));
         }
       })
       .catch(error => next(error))
@@ -141,25 +215,29 @@ processRouter.route('/in-progress/:batchId/next')
   .get(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
-        const batch = user.inProgressList.find(item => item.equals(req.params.batchId));
-        if (batch) {
-          let nextStep = batch.currentStep + 1;
-          if (batch.schedule[batch.currentStep].concurrent) {
-            while (batch.schedule[nextStep].concurrent) {
-              nextStep++;
-            }
+        if (user !== null) {
+          if (user.inProgressList.findIndex(item => item.equals(req.params.batchId)) !== -1) {
+            return InProgress.findById(req.params.batchId)
+              .then(batch => {
+                let nextStep = batch.currentStep + 1;
+                if (batch.schedule[batch.currentStep].concurrent) {
+                  while (batch.schedule[nextStep] && batch.schedule[nextStep].concurrent) {
+                    nextStep++;
+                  }
+                }
+                batch.currentStep = nextStep;
+                return batch.save()
+                  .then(dbres => {
+                    res.statusCode = 200;
+                    res.setHeader('content-type', 'application/json');
+                    res.json(dbres);
+                  });
+              });
+          } else {
+            return next(createError(400, 'Batch does not belong to user'));
           }
-          batch.currentStep = nextStep;
-          user.save()
-            .then(dbres => {
-              res.statusCode = 200;
-              res.setHeader('content-type', 'application/json');
-              res.json(dbres);
-            });
         } else {
-          const err = new Error(`Batch with id ${req.params.batchId} not found`);
-          err.status = 404;
-          return next(err);
+          return next(createError(404, 'User not found'));
         }
       })
       .catch(error => next(error))
@@ -169,7 +247,7 @@ processRouter.route('/user/:userId/master/:masterRecipeId/recipe/:recipeId')
   .get(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.params.userId)
       .then(user => {
-        if (user) {
+        if (user !== null) {
           return RecipeMaster.findOne({
             $and: [
               {_id: req.params.masterRecipeId},
@@ -219,53 +297,51 @@ processRouter.route('/user/:userId/master/:masterRecipeId/recipe/:recipeId')
             }
           })
           .then(master => {
-            console.log('found master', master);
-            if (master) {
-              const _recipe = master.recipes.find(item => item.equals(req.params.recipeId));
-              return Recipe.findById(_recipe)
-                .then(recipe => {
-                  if (recipe) {
-                    User.findById(req.user.id)
-                      .then(requestingUser => {
-                        const newInProgress = {
-                          recipe: recipe._id,
-                          schedule: Array.from(recipe.processSchedule, process => {
-                            const copy = {};
-                            for (const key in process) {
-                              if (key != '_id') {
-                                copy[key] = process[key];
+            if (master !== null) {
+              const recipeId = master.recipes.find(recipe => recipe.equals(req.params.recipeId));
+              if (recipeId !== undefined) {
+                return Recipe.findById(recipeId)
+                  .then(recipe => {
+                    if (recipe !== null) {
+                      return User.findById(req.user.id)
+                        .then(requestingUser => {
+                          const _newInProgressData = {
+                            owner: req.user.id,
+                            recipe: recipe._id,
+                            schedule: Array.from(recipe.processSchedule, process => {
+                              const copy = {};
+                              for (const key in process) {
+                                if (key !== '_id') {
+                                  copy[key] = process[key];
+                                }
                               }
-                            }
-                            return copy;
-                          })
-                        };
-                        requestingUser.inProgressList.push(newInProgress);
-                        return requestingUser.save()
-                          .then(dbres => {
-                            res.statusCode = 200;
-                            res.setHeader('content-type', 'application/json');
-                            res.json(dbres.inProgressList);
-                          })
-                      })
-                  } else {
-                    console.log('recipe not found');
-                    const err = new Error(`Recipe with id: "${req.params.recipeId}" not found`);
-                    err.status = 404;
-                    return next(err);
-                  }
-                })
+                              return copy;
+                            })
+                          };
+                          return InProgress.create(_newInProgressData)
+                            .then(newInProgress => {
+                              requestingUser.inProgressList.push(newInProgress._id);
+                              return requestingUser.save()
+                                .then(dbres => {
+                                  res.statusCode = 200;
+                                  res.setHeader('content-type', 'application/json');
+                                  res.json(newInProgress);
+                                });
+                            });
+                        })
+                    } else {
+                      return next(createError(404, 'Recipe not found'));
+                    }
+                  })
+              } else {
+                return next(createError(404, 'Recipe does not belong to recipe master'));
+              }
             } else {
-              console.log('master not found');
-              const err = new Error(`Recipe master with id: "${req.params.masterRecipeId}" not found`);
-              err.status = 404;
-              return next(err);
+              return next(createError(404, 'Recipe master not found'));
             }
-          })
+          });
         } else {
-          console.log('user not found');
-          const err = new Error(`User with id: "${req.params.userId}" not found`);
-          err.status = 404;
-          return next(err);
+          return next(createError(404, 'User not found'));
         }
       })
       .catch(error => next(error))
