@@ -55,7 +55,7 @@ recipeRouter.route('/public/:userId')
         }
       })
       .then(user => {
-        if (user != null) {
+        if (user !== null) {
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
           res.json(user.masterList.filter(master => {
@@ -93,7 +93,7 @@ recipeRouter.route('/public/master/:masterRecipeId')
         }
       })
       .then(masterRecipe => {
-        if (masterRecipe != null && masterRecipe.isPublic) {
+        if (masterRecipe !== null && masterRecipe.isPublic) {
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
           res.json(masterRecipe);
@@ -117,13 +117,13 @@ recipeRouter.route('/public/master/:masterRecipeId/recipe/:recipeId')
   .get((req, res, next) => {
     RecipeMaster.findOne({_id: req.params.masterRecipeId, recipes: req.params.recipeId})
       .then(masterRecipe => {
-        if (masterRecipe != null && masterRecipe.isPublic) {
+        if (masterRecipe !== null && masterRecipe.isPublic) {
           return Recipe.findById(req.params.recipeId)
             .populate('grains.grainType')
             .populate('hops.hopsType')
             .populate('yeast.yeastType')
             .then(recipe => {
-              if (recipe != null) {
+              if (recipe !== null) {
                 res.statusCode = 200;
                 res.setHeader('content-type', 'application/json');
                 res.json(recipe);
@@ -190,7 +190,7 @@ recipeRouter.route('/private/user')
         }
       })
       .then(user => {
-        if (user != null) {
+        if (user !== null) {
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
           res.json(user.masterList);
@@ -205,7 +205,7 @@ recipeRouter.route('/private/user')
   .post(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
-        if (user != null) {
+        if (user !== null) {
           req.body.recipe.isMaster = true;
           return Recipe.create(req.body.recipe)
             .then(newRecipe => {
@@ -217,30 +217,34 @@ recipeRouter.route('/private/user')
                   user.masterList.push(newMaster);
                   return user.save()
                     .then(() => {
-                      return RecipeMaster.findById(newMaster._id)
-                        .populate('style')
-                        .populate({
-                          path: 'recipes',
-                          populate: {
-                            path: 'grains.grainType'
-                          }
-                        })
-                        .populate({
-                          path: 'recipes',
-                          populate: {
-                            path: 'hops.hopsType'
-                          }
-                        })
-                        .populate({
-                          path: 'recipes',
-                          populate: {
-                            path: 'yeast.yeastType'
-                          }
-                        })
-                        .then(forResponse => {
-                          res.statusCode = 201;
-                          res.setHeader('content-type', 'application/json');
-                          res.json(forResponse);
+                      newRecipe.owner = newMaster._id;
+                      return newRecipe.save()
+                        .then(() => {
+                          return RecipeMaster.findById(newMaster._id)
+                            .populate('style')
+                            .populate({
+                              path: 'recipes',
+                              populate: {
+                                path: 'grains.grainType'
+                              }
+                            })
+                            .populate({
+                              path: 'recipes',
+                              populate: {
+                                path: 'hops.hopsType'
+                              }
+                            })
+                            .populate({
+                              path: 'recipes',
+                              populate: {
+                                path: 'yeast.yeastType'
+                              }
+                            })
+                            .then(forResponse => {
+                              res.statusCode = 201;
+                              res.setHeader('content-type', 'application/json');
+                              res.json(forResponse);
+                            });
                         });
                     });
                 });
@@ -258,7 +262,7 @@ recipeRouter.route('/private/master/:masterRecipeId')
   .get(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
-        if (user != null
+        if (user !== null
             && user.masterList.some(recipe => recipe.equals(req.params.masterRecipeId))) {
           return RecipeMaster.findById(req.params.masterRecipeId)
             .populate('style')
@@ -274,6 +278,12 @@ recipeRouter.route('/private/master/:masterRecipeId')
                 path: 'hops.hopsType'
               }
             })
+            .populate({
+              path: 'recipes',
+              populate: {
+                path: 'yeast.yeastType'
+              }
+            })
             .then(masterRecipe => {
               if (masterRecipe) {
                 res.statusCode = 200;
@@ -286,7 +296,7 @@ recipeRouter.route('/private/master/:masterRecipeId')
               }
             });
         } else {
-          const err = (user != null)
+          const err = (user !== null)
                       ? new Error(`Could not find master with id ${req.params.masterRecipeId}`)
                       : new Error('Could not find user');
           err.status = 404;
@@ -298,7 +308,7 @@ recipeRouter.route('/private/master/:masterRecipeId')
   .post(authenticate.verifyUser, (req, res, next) => {
     User.findOne({_id: req.user.id, masterList: req.params.masterRecipeId})
       .then(user => {
-        if (user != null) {
+        if (user !== null) {
           return RecipeMaster.findById(req.params.masterRecipeId)
             .then(master => {
               if (req.body.isMaster) {
@@ -314,7 +324,7 @@ recipeRouter.route('/private/master/:masterRecipeId')
               return Recipe.create(req.body)
                 .then(newRecipe => {
                   master.recipes.push(newRecipe);
-                  if (master.recipes.length == 1 || req.body.isMaster) {
+                  if (master.recipes.length === 1 || req.body.isMaster) {
                     master.master = newRecipe.id;
                   }
                   return master.save()
@@ -342,37 +352,36 @@ recipeRouter.route('/private/master/:masterRecipeId')
   .patch(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
-        if (user != null
-            && user.masterList.some(recipe => recipe.equals(req.params.masterRecipeId))) {
+        if (user !== null && user.masterList.some(recipe => recipe.equals(req.params.masterRecipeId))) {
           return RecipeMaster.findByIdAndUpdate(
-            req.params.masterRecipeId,
-            req.body,
-            {new: true}
-          )
-          .populate('style')
-          .populate({
-            path: 'recipes',
-            populate: {
-              path: 'grains.grainType'
-            }
-          })
-          .populate({
-            path: 'recipes',
-            populate: {
-              path: 'hops.hopsType'
-            }
-          })
-          .populate({
-            path: 'recipes',
-            populate: {
-              path: 'yeast.yeastType'
-            }
-          })
-          .then(updated => {
-            res.statusCode = 200;
-            res.setHeader('content-type', 'application/json');
-            res.json(updated);
-          });
+              req.params.masterRecipeId,
+              req.body,
+              {new: true}
+            )
+            .populate('style')
+            .populate({
+              path: 'recipes',
+              populate: {
+                path: 'grains.grainType'
+              }
+            })
+            .populate({
+              path: 'recipes',
+              populate: {
+                path: 'hops.hopsType'
+              }
+            })
+            .populate({
+              path: 'recipes',
+              populate: {
+                path: 'yeast.yeastType'
+              }
+            })
+            .then(updated => {
+              res.statusCode = 200;
+              res.setHeader('content-type', 'application/json');
+              res.json(updated);
+            });
         } else {
           const err = new Error('Could not find user');
           err.status = 404;
@@ -384,7 +393,7 @@ recipeRouter.route('/private/master/:masterRecipeId')
   .delete(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
-        if (user != null
+        if (user !== null
             && user.masterList.some(recipe => recipe.equals(req.params.masterRecipeId))) {
           return RecipeMaster.findByIdAndDelete(req.params.masterRecipeId)
             .then(dbres => {
@@ -396,7 +405,7 @@ recipeRouter.route('/private/master/:masterRecipeId')
                     break;
                   }
                 }
-                if (toRemove != -1) {
+                if (toRemove !== -1) {
                   user.masterList.splice(toRemove, 1);
                   return Recipe.deleteMany({_id: {$in: dbres.recipes}})
                     .then(recipeDBres => {
@@ -423,7 +432,7 @@ recipeRouter.route('/private/master/:masterRecipeId/recipe/:recipeId')
   .get(authenticate.verifyUser, (req, res, next) => {
     User.findOne({_id: req.user.id, masterList: req.params.masterRecipeId})
       .then(user => {
-        if (user != null) {
+        if (user !== null) {
           return RecipeMaster.findById(req.params.masterRecipeId)
             .then(master => {
               if (master) {
@@ -454,11 +463,11 @@ recipeRouter.route('/private/master/:masterRecipeId/recipe/:recipeId')
   .patch(authenticate.verifyUser, (req, res, next) => {
     User.findOne({_id: req.user.id, masterList: req.params.masterRecipeId})
       .then(user => {
-        if (user != null) {
+        if (user !== null) {
           return RecipeMaster.findById(req.params.masterRecipeId)
             .then(master => {
               const recipe = master.recipes.find(item => item.equals(req.params.recipeId));
-              if (recipe && req.body.isMaster == false && master.recipes.length < 2) {
+              if (recipe && req.body.isMaster === false && master.recipes.length < 2) {
                 const err = new Error('At least one recipe must be set as master');
                 err.status = 409;
                 return next(err);
@@ -506,7 +515,7 @@ recipeRouter.route('/private/master/:masterRecipeId/recipe/:recipeId')
   .delete(authenticate.verifyUser, (req, res, next) => {
     User.findOne({_id: req.user.id, masterList: req.params.masterRecipeId})
       .then(user => {
-        if (user != null) {
+        if (user !== null) {
           return RecipeMaster.findById(req.params.masterRecipeId)
             .then(master => {
               const recipe = master.recipes.find(item => item.equals(req.params.recipeId));
@@ -521,7 +530,7 @@ recipeRouter.route('/private/master/:masterRecipeId/recipe/:recipeId')
                           break;
                         }
                       }
-                      if (toRemove != -1) {
+                      if (toRemove !== -1) {
                         master.recipes.splice(toRemove, 1);
                       }
                       if (dbres.isMaster) {
