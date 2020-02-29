@@ -7,6 +7,11 @@ const processSchema = require('./process');
 const alertSchema = require('./alert');
 
 const inProgressSchema = new Schema({
+  owner: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   currentStep: {
     type: Number,
     default: 0
@@ -22,4 +27,4 @@ const inProgressSchema = new Schema({
   timestamps: true
 });
 
-module.exports = inProgressSchema;
+module.exports = mongoose.model('InProgress', inProgressSchema);

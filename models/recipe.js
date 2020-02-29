@@ -10,6 +10,10 @@ const otherIngredientsSchema = require('./other-ingredients');
 const processSchema = require('./process');
 
 const recipeSchema = new Schema({
+  owner: {
+    type: Schema.Types.ObjectId,
+    ref: 'RecipeMaster'
+  },
   variantName: {
     type: String,
     default: 'Initial'

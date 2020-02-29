@@ -6,6 +6,11 @@ const Schema = mongoose.Schema;
 const recipeSchema = require('./recipe');
 
 const recipeMasterSchema = new Schema({
+  owner: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   name: {
     type: String,
     required: true
@@ -36,11 +41,7 @@ const recipeMasterSchema = new Schema({
   recipes: [{
     type: Schema.Types.ObjectId,
     ref: 'Recipe'
-  }],
-  owner: {
-    type: Schema.Types.ObjectId,
-    ref: 'User'
-  }
+  }]
 }, {
   timestamps: true
 });
