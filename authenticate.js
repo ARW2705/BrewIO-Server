@@ -39,3 +39,10 @@ exports.verifyAdmin = (req, res, next) => {
     return next(createError(403));
   }
 };
+
+exports.verifyEditor = (req, res, next) => {
+  if (req.user.editor || req.user.admin) next();
+  else {
+    return next(createError(403));
+  }
+}
