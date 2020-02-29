@@ -18,11 +18,11 @@ userRouter.get('/checkJWToken', (req, res) => {
     if (!user) {
       res.statusCode = 401;
       res.setHeader('content-type', 'application/json');
-      return res.json({status: 'JWT invalid', success: false, error: data});
+      return res.json({status: 'JWT invalid', success: false, user: null, error: data});
     } else {
       res.statusCode = 200;
       res.setHeader('content-type', 'application/json');
-      return res.json({status: 'JWT valid', success: true, user: user});
+      return res.json({status: 'JWT valid', success: true, user: user, error: null});
     }
   })(req, res);
 });
@@ -33,20 +33,31 @@ userRouter.post('/login', (req, res, next) => {
     if (!user) {
       res.statusCode = 401;
       res.setHeader('content-type', 'application/json');
-      res.json({success: false, status: 'Login Unsuccessful', error: data});
+      return res.json({success: false, status: 'Login Unsuccessful', error: data});
     }
     req.logIn(user, error => {
       if (error) return next(error);
       const token = authenticate.getToken({_id: req.user._id});
-      res.statusCode = 200;
-      res.setHeader('content-type', 'application/json');
-      res.json({success: true, token: token, status: 'Successfully logged in'});
+      return User.findById(user._id)
+        .then(userProfile => {
+          const _user = {
+            username: userProfile.username || undefined,
+            firstname: userProfile.firstname || undefined,
+            lastname: userProfile.lastname || undefined,
+            email: userProfile.email || undefined,
+            friendList: userProfile.friendList,
+            token: token
+          };
+          res.statusCode = 200;
+          res.setHeader('content-type', 'application/json');
+          return res.json({success: true, status: 'Login Successful', user: _user});
+        });
     });
   })(req, res, next);
 });
 
 userRouter.post('/signup', (req, res, next) => {
-  User.register(new User({username: req.body.username}), req.body.password,
+  User.register(new User({username: req.body.username, email: req.body.email}), req.body.password,
     (error, user) => {
       if (error) {
         res.statusCode = 500;
@@ -56,7 +67,6 @@ userRouter.post('/signup', (req, res, next) => {
         console.log('signup', user, req.body);
         if (req.body.firstname) user.firstname = req.body.firstname;
         if (req.body.lastname) user.lastname = req.body.lastname;
-        if (req.body.email) user.email = req.body.email;
         user.save((error, user) => {
           if (error) {
             res.statusCode = 500;
@@ -110,27 +120,44 @@ userRouter.route('/profile')
           }
         }
       })
+      .populate({
+        path: 'inProgressList',
+        populate: 'recipe'
+      })
+      .populate({
+        path: 'inventoryList',
+        populate: 'itemDetails.master itemDetails.recipe'
+      })
       .then(user => {
-        const response = {
-          username: user.username,
-          firstname: user.firstname,
-          lastname: user.lastname,
-          email: user.email,
-          masterList: user.masterList,
-          inProgressList: user.inProgressList
-        };
-        res.statusCode = 200;
-        res.setHeader('content-type', 'application/json');
-        res.json(response);
+        if (user !== null) {
+          const response = {
+            username: user.username,
+            firstname: user.firstname,
+            lastname: user.lastname,
+            email: user.email,
+            masterList: user.masterList,
+            inProgressList: user.inProgressList,
+            inventoryList: user.inventoryList
+          };
+          res.statusCode = 200;
+          res.setHeader('content-type', 'application/json');
+          res.json(response);
+        } else {
+          return next(createError(404, 'User not found'));
+        }
       })
       .catch(error => next(error));
   })
   .patch(authenticate.verifyUser, (req, res, next) => {
     User.findByIdAndUpdate(req.user.id, req.body, {new: true})
       .then(update => {
-        res.statusCode = 200;
-        res.setHeader('content-type', 'application/json');
-        res.json(update);
+        if (update !== null) {
+          res.statusCode = 200;
+          res.setHeader('content-type', 'application/json');
+          res.json(update);
+        } else {
+          return next(createError(500, 'Failed to update User'));
+        }
       })
       .catch(error => next(error));
   });
