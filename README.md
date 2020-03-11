@@ -17,6 +17,8 @@ The following environment variables are required:
 * **MONGO_URL** - contains mongoose connection url with credentials (eg. "mongodb://dbuser:dbpass@localhost:27017/dbname")
 * **TOKEN_KEY** - a secret string to generate json web tokens
 
+SSL certification [imports](https://github.com/ARW2705/BrewIO-Server/blob/master/bin/www) must also be updated to match your installation
+
 
 ### Installation
 
