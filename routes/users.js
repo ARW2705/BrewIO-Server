@@ -41,7 +41,8 @@ userRouter.post('/login', (req, res, next) => {
       return User.findById(user._id)
         .then(userProfile => {
           const _user = {
-            username: userProfile.username || undefined,
+            _id: userProfile._id,
+            username: userProfile.username,
             firstname: userProfile.firstname || undefined,
             lastname: userProfile.lastname || undefined,
             email: userProfile.email || undefined,
@@ -56,7 +57,13 @@ userRouter.post('/login', (req, res, next) => {
   })(req, res, next);
 });
 
-userRouter.post('/signup', (req, res, next) => {
+userRouter.post('/signup', async(req, res, next) => {
+  const users = await User.find({});
+  if (users.length > 5) {
+    res.statusCode = 423;
+    res.setHeader('content-type', 'application/json');
+    return res.json({success: false, status: 'Max users reached: contact admin'});
+  }
   User.register(new User({username: req.body.username, email: req.body.email}), req.body.password,
     (error, user) => {
       if (error) {
@@ -131,6 +138,7 @@ userRouter.route('/profile')
       .then(user => {
         if (user !== null) {
           const response = {
+            _id: user._id,
             username: user.username,
             firstname: user.firstname,
             lastname: user.lastname,

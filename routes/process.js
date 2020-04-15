@@ -40,30 +40,11 @@ processRouter.route('/in-progress/:batchId')
         if (user !== null) {
           if (user.inProgressList.findIndex(item => item.equals(req.params.batchId)) !== -1) {
             return InProgress.findById(req.params.batchId)
-              .populate('owner')
-              .populate({
-                path: 'recipe',
-                populate: {
-                  path: 'grains.grainType'
-                }
-              })
-              .populate({
-                path: 'recipe',
-                populate: {
-                  path: 'hops.hopsType'
-                }
-              })
-              .populate({
-                path: 'recipe',
-                populate: {
-                  path: 'yeast.yeastType'
-                }
-              })
               .then(batch => {
                 res.statusCode = 200;
                 res.setHeader('content-type', 'application/json');
                 res.json(batch);
-              })
+              });
           } else {
             return next(createError(404, 'Batch not found'));
           }
@@ -79,25 +60,6 @@ processRouter.route('/in-progress/:batchId')
         if (user !== null) {
           if (user.inProgressList.findIndex(item => item.equals(req.params.batchId)) !== -1) {
             return InProgress.findByIdAndUpdate(req.params.batchId, req.body, {new: true})
-              .populate('owner')
-              .populate({
-                path: 'recipe',
-                populate: {
-                  path: 'grains.grainType'
-                }
-              })
-              .populate({
-                path: 'recipe',
-                populate: {
-                  path: 'hops.hopsType'
-                }
-              })
-              .populate({
-                path: 'recipe',
-                populate: {
-                  path: 'yeast.yeastType'
-                }
-              })
               .then(updatedBatch => {
                 res.statusCode = 200;
                 res.setHeader('content-type', 'application/json');
@@ -162,76 +124,6 @@ processRouter.route('/in-progress/:batchId/step/:stepId')
                 } else {
                   return next(createError(404, 'Batch not found'));
                 }
-              });
-          } else {
-            return next(createError(400, 'Batch does not belong to user'));
-          }
-        } else {
-          return next(createError(404, 'User not found'));
-        }
-      })
-      .catch(error => next(error))
-  })
-  .patch(authenticate.verifyUser, (req, res, next) => {
-    User.findById(req.user.id)
-      .then(user => {
-        if (user !== null) {
-          if (user.inProgressList.findIndex(item => item.equals(req.params.batchId)) !== -1) {
-            return InProgress.findById(req.params.batchId)
-              .then(batch => {
-                const stepIndex = batch.schedule.findIndex(_step => _step.equals(req.params.stepId));
-                if (stepIndex !== undefined) {
-                  if (req.body.alerts) {
-                    const alertsToAdd = batch.alerts.filter(alert => {
-                      return alert.title !== req.body.alerts[0].title
-                    })
-                    .concat(req.body.alerts);
-                    batch.alerts = alertsToAdd;
-                    if (req.body.startDatetime) {
-                      batch.schedule[stepIndex]['startDatetime'] = req.body.startDatetime;
-                    }
-                    return batch.save()
-                      .then(updatedBatch => {
-                        res.statusCode = 200;
-                        res.setHeader('content-type', 'application/json');
-                        res.json(updatedBatch);
-                      });
-                  }
-                } else {
-                  return next(createError(404, 'Step not found'));
-                }
-              });
-          } else {
-            return next(createError(400, 'Batch does not belong to user'));
-          }
-        } else {
-          return next(createError(404, 'User not found'));
-        }
-      })
-      .catch(error => next(error))
-  });
-
-processRouter.route('/in-progress/:batchId/next')
-  .get(authenticate.verifyUser, (req, res, next) => {
-    User.findById(req.user.id)
-      .then(user => {
-        if (user !== null) {
-          if (user.inProgressList.findIndex(item => item.equals(req.params.batchId)) !== -1) {
-            return InProgress.findById(req.params.batchId)
-              .then(batch => {
-                let nextStep = batch.currentStep + 1;
-                if (batch.schedule[batch.currentStep].concurrent) {
-                  while (batch.schedule[nextStep] && batch.schedule[nextStep].concurrent) {
-                    nextStep++;
-                  }
-                }
-                batch.currentStep = nextStep;
-                return batch.save()
-                  .then(dbres => {
-                    res.statusCode = 200;
-                    res.setHeader('content-type', 'application/json');
-                    res.json(dbres);
-                  });
               });
           } else {
             return next(createError(400, 'Batch does not belong to user'));
