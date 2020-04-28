@@ -9,11 +9,7 @@ const yeastBatchSchema = require('./yeast-batch');
 const otherIngredientsSchema = require('./other-ingredients');
 const processSchema = require('./process');
 
-const recipeSchema = new Schema({
-  owner: {
-    type: Schema.Types.ObjectId,
-    ref: 'RecipeMaster'
-  },
+const variantSchema = new Schema({
   variantName: {
     type: String,
     default: 'Initial'
@@ -89,4 +85,4 @@ const recipeSchema = new Schema({
   timestamps: true
 });
 
-module.exports = mongoose.model('Recipe', recipeSchema);
+module.exports = variantSchema;

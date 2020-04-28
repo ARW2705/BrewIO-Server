@@ -3,9 +3,9 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const recipeSchema = require('./recipe');
+const recipeVariant = require('./recipe-variant');
 
-const recipeMasterSchema = new Schema({
+const recipeSchema = new Schema({
   owner: {
     type: Schema.Types.ObjectId,
     ref: 'User',
@@ -38,12 +38,9 @@ const recipeMasterSchema = new Schema({
     type: Boolean,
     default: false
   },
-  recipes: [{
-    type: Schema.Types.ObjectId,
-    ref: 'Recipe'
-  }]
+  variants: [ recipeVariant ]
 }, {
   timestamps: true
 });
 
-module.exports = mongoose.model('RecipeMaster', recipeMasterSchema);
+module.exports = mongoose.model('Recipe', recipeSchema);

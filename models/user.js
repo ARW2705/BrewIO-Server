@@ -27,6 +27,10 @@ const userSchema = new Schema({
     type: Boolean,
     default: false
   },
+  preferredUnits: {
+    type: String,
+    default: 'e'
+  },
   inProgressList: [
     {
       type: Schema.Types.ObjectId,

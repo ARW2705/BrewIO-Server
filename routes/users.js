@@ -47,7 +47,8 @@ userRouter.post('/login', (req, res, next) => {
             lastname: userProfile.lastname || undefined,
             email: userProfile.email || undefined,
             friendList: userProfile.friendList,
-            token: token
+            token: token,
+            preferredUnits: userProfile.preferredUnits
           };
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
