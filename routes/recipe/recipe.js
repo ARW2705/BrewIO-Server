@@ -1,15 +1,15 @@
 'use strict';
 
-const createError = require('http-errors');
+const httpError = require('../../utils/http-error');
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
-const authenticate = require('../authenticate');
-const populationPaths = require('./recipe-helpers/populationPaths');
-const populateAll = require('./recipe-helpers/populateAll');
-const Recipe = require('../models/recipe-master');
-const User = require('../models/user');
+const authenticate = require('../../authenticate');
+const populationPaths = require('./recipe-helpers').populationPaths;
+const removeDefaultIds = require('../../utils/remove-default-ids');
+const Recipe = require('../../models/recipe-master');
+const User = require('../../models/user');
 
 const recipeRouter = express.Router();
 
@@ -24,16 +24,13 @@ recipeRouter.route('/public/:userId')
     User.findById(req.params.userId)
       .then(user => {
         if (user === null) {
-          const err = new Error('User not found');
-          err.status = 404;
-          return next(err);
+          throw httpError(404, 'User not found');
         }
-        return populateAll(Recipe.find({_id: { $in: user.masterList}}));
-        // return Recipe.find({_id: { $in: user.masterList}})
-        //   .populate('style')
-        //   .populate('variants.grains.grainType')
-        //   .populate('variants.hops.hopsType')
-        //   .populate('variants.yeast.yeastType');
+        return Recipe.find({ _id: { $in: user.masterList } })
+          .populate('style')
+          .populate('variants.grains.grainType')
+          .populate('variants.hops.hopsType')
+          .populate('variants.yeast.yeastType');
       })
       .then(masterList => {
         res.statusCode = 200;
@@ -42,22 +39,15 @@ recipeRouter.route('/public/:userId')
           return master.isPublic;
         }));
       })
-      .catch(err => next(err));
+      .catch(next);
   });
 
 recipeRouter.route('/public/master/:recipeMasterId')
   .get((req, res, next) => {
-    // Recipe.findById(req.params.recipeMasterId)
-    //   .populate('style')
-    //   .populate('variants.grains.grainType')
-    //   .populate('variants.hops.hopsType')
-    //   .populate('variants.yeast.yeastType')
-    populateAll(Recipe.findById(req.params.recipeMasterId));
+    Recipe.findById(req.params.recipeMasterId)
       .then(recipeMaster => {
         if (recipeMaster === null) {
-          const err = new Error(`Recipe with id: "${req.params.recipeMasterId}" not found`);
-          err.status = 404;
-          return next(err);
+          throw httpError(404, `Recipe with id: "${req.params.recipeMasterId}" not found`);
         }
 
         if (!recipeMaster.isPublic) {
@@ -69,26 +59,25 @@ recipeRouter.route('/public/master/:recipeMasterId')
           });
         }
 
-        res.statusCode = 200;
-        res.setHeader('content-type', 'application/json');
-        res.json(recipeMaster);
+        return Recipe.populate(
+          recipeMaster,
+          populationPaths
+        )
+        .then(forResponse => {
+          res.statusCode = 200;
+          res.setHeader('content-type', 'application/json');
+          res.json(forResponse);
+        });
       })
       .catch(err => next(err));
   });
 
 recipeRouter.route('/public/master/:recipeMasterId/variant/:recipeVariantId')
   .get((req, res, next) => {
-    // Recipe.findById(req.params.recipeMasterId)
-    //   .populate('style')
-    //   .populate('variants.grains.grainType')
-    //   .populate('variants.hops.hopsType')
-    //   .populate('variants.yeast.yeastType')
-    populateAll(Recipe.findById(req.params.recipeMasterId))
+    Recipe.findById(req.params.recipeMasterId)
       .then(recipeMaster => {
         if (recipeMaster === null) {
-          const err = new Error(`Recipe with id: "${req.params.recipeMasterId}" not found`);
-          err.status = 404;
-          return next(err);
+          throw httpError(404, `Recipe with id: "${req.params.recipeMasterId}" not found`);
         }
 
         if (!recipeMaster.isPublic) {
@@ -102,59 +91,63 @@ recipeRouter.route('/public/master/:recipeMasterId/variant/:recipeVariantId')
 
         const variant = recipeMaster.variants.find(_variant => _variant.equals(req.params.recipeVariantId));
         if (variant === undefined) {
-          const err = new Error(`Recipe variant with id: "${req.params.recipeVariantId}" not found`);
-          err.status = 404;
-          return next(err);
+          throw httpError(404, `Recipe variant with id: "${req.params.recipeVariantId}" not found`)
         }
 
-        res.statusCode = 200;
-        res.setHeader('content-type', 'application/json');
-        res.json(variant);
+        return Recipe.populate(
+          variant,
+          variantPopulationPaths
+        )
+        .then(forResponse => {
+          res.statusCode = 200;
+          res.setHeader('content-type', 'application/json');
+          res.json(forResponse);
+        });
       })
-      .catch(err => next(err));
+      .catch(next);
   });
 
 /* Private Accessible */
 
-// CRUD Operations only performed by User
+// CRUD Operations only performed by User owned docs
 
 recipeRouter.route('/private')
   .get(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
         if (user === null) {
-          const err = new Error('User not found');
-          err.status = 404;
-          return next(err);
+          throw httpError(404, 'User not found');
         }
-        return populateAll(Recipe.find({_id: { $in: user.masterList}}));
-        // return Recipe.find({_id: { $in: user.masterList}})
-        //   .populate('style')
-        //   .populate('variants.grains.grainType')
-        //   .populate('variants.hops.hopsType')
-        //   .populate('variants.yeast.yeastType');
+
+        return Recipe.find({ _id: { $in: user.masterList } })
+          .populate('style')
+          .populate('variants.grains.grainType')
+          .populate('variants.hops.hopsType')
+          .populate('variants.yeast.yeastType')
+          .then(masterList => {
+            res.statusCode = 200;
+            res.setHeader('content-type', 'application/json');
+            res.json(masterList);
+          });
       })
-      .then(masterList => {
-        res.statusCode = 200;
-        res.setHeader('content-type', 'application/json');
-        res.json(masterList);
-      })
-      .catch(err => next(err));
+      .catch(next);
   })
   .post(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
         if (user === null) {
-          const err = new Error('User not found');
-          err.status = 404;
-          return next(err);
+          throw httpError(404, 'User not found');
         }
+
         req.body.owner = user._id;
+        removeDefaultIds(req.body);
+
         return Recipe.create(req.body)
           .then(newRecipeMaster => {
             newRecipeMaster.master = newRecipeMaster.variants[0];
             newRecipeMaster.variants[0].isMaster = true;
-            newRecipeMaster.save()
+            
+            return newRecipeMaster.save()
               .then(() => {
                 user.masterList.push(newRecipeMaster);
                 return user.save()
@@ -163,12 +156,6 @@ recipeRouter.route('/private')
                 return Recipe.populate(
                   newRecipeMaster,
                   populationPaths
-                  // [
-                  //   { path: 'style' },
-                  //   { path: 'variants.grains.grainType' },
-                  //   { path: 'variants.hops.hopsType' },
-                  //   { path: 'variants.yeast.yeastType' }
-                  // ]
                 );
               });
           })
@@ -178,7 +165,7 @@ recipeRouter.route('/private')
             res.json(forResponse);
           });
       })
-      .catch(err => next(err));
+      .catch(next);
   });
 
 recipeRouter.route('/private/master/:recipeMasterId')
@@ -186,28 +173,21 @@ recipeRouter.route('/private/master/:recipeMasterId')
     User.findById(req.user.id)
       .then(user => {
         if (user === null) {
-          const err = new Error('User not found');
-          err.status = 404;
-          return next(err);
+          throw httpError(404, 'User not found');
         }
 
         if (!user.masterList.some(recipe => recipe.equals(req.params.recipeMasterId))) {
-          const err = new Error(`Recipe with id: ${req.params.recipeMasterId} not found or does not belong to User`);
-          err.status = 404;
-          return next(err);
+          throw httpError(404, `Recipe with id: ${req.params.recipeMasterId} not found or does not belong to User`);
         }
 
-        // return Recipe.findById(req.params.recipeMasterId)
-        //   .populate('style')
-        //   .populate('variants.grains.grainType')
-        //   .populate('variants.hops.hopsType')
-        //   .populate('variants.yeast.yeastType')
-        return populateAll(Recipe.findById(req.params.recipeMasterId))
+        return Recipe.findById(req.params.recipeMasterId)
+          .populate('style')
+          .populate('variants.grains.grainType')
+          .populate('variants.hops.hopsType')
+          .populate('variants.yeast.yeastType')
           .then(recipeMaster => {
             if (recipeMaster === null) {
-              const err = new Error(`Recipe with id: "${req.params.recipeMasterId}" not found`);
-              err.status = 404;
-              return next(err);
+              throw httpError(404, `Recipe with id: "${req.params.recipeMasterId}" not found`);
             }
 
             res.statusCode = 200;
@@ -215,30 +195,28 @@ recipeRouter.route('/private/master/:recipeMasterId')
             res.json(recipeMaster);
           });
       })
-      .catch(err => next(err));
+      .catch(next);
   })
   .post(authenticate.verifyUser, (req, res, next) => {
-    User.findOne({_id: req.user.id, masterList: req.params.recipeMasterId})
+    User.findOne({
+        _id: req.user.id,
+        masterList: req.params.recipeMasterId
+      })
       .then(user => {
         if (user === null) {
-          const err = new Error('User not found');
-          err.status = 404;
-          return next(err);
+          throw httpError(404, 'User not found');
         }
 
         if (!user.masterList.some(recipe => recipe.equals(req.params.recipeMasterId))) {
-          const err = new Error(`Recipe with id: ${req.params.recipeMasterId} not found or does not belong to User`);
-          err.status = 404;
-          return next(err);
+          throw httpError(404, `Recipe with id: ${req.params.recipeMasterId} not found or does not belong to User`);
         }
 
+        removeDefaultIds(req.body);
         return Recipe.findById(req.params.recipeMasterId)
           .then(recipeMaster => {
 
             if (recipeMaster === null) {
-              const err = new Error(`Recipe with id: ${req.params.recipeMasterId} not found`);
-              err.status = 404;
-              return next(err);
+              throw httpError(404, `Recipe with id: ${req.params.recipeMasterId} not found`);
             }
 
             const newRecipe = req.body;
@@ -254,12 +232,6 @@ recipeRouter.route('/private/master/:recipeMasterId')
                 return Recipe.populate(
                   recipeMaster,
                   populationPaths
-                  // [
-                  //   { path: 'style' },
-                  //   { path: 'variants.grains.grainType' },
-                  //   { path: 'variants.hops.hopsType' },
-                  //   { path: 'variants.yeast.yeastType' }
-                  // ]
                 )
               })
               .then(forResponse => {
@@ -270,62 +242,45 @@ recipeRouter.route('/private/master/:recipeMasterId')
 
           });
       })
-      .catch(err => next(err));
+      .catch(next);
   })
   .patch(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
         if (user === null) {
-          const err = new Error('User not found');
-          err.status = 404;
-          return next(err);
+          throw httpError(404, 'User not found');
         }
 
         if (!user.masterList.some(recipe => recipe.equals(req.params.recipeMasterId))) {
-          const err = new Error(`Recipe with id: ${req.params.recipeMasterId} not found or does not belong to User`);
-          err.status = 404;
-          return next(err);
+          throw httpError(404, `Recipe with id: ${req.params.recipeMasterId} not found or does not belong to User`);
         }
 
-        // return Recipe.findByIdAndUpdate(
-        //     req.params.recipeMasterId,
-        //     { $set: req.body },
-        //     { new: true }
-        //   )
-        //   .populate('style')
-        //   .populate('variants.grains.grainType')
-        //   .populate('variants.hops.hopsType')
-        //   .populate('variants.yeast.yeastType')
-        return populateAll(
-            Recipe.findByIdAndUpdate(
-              req.params.recipeMasterId,
-              { $set: req.body },
-              { new: true }
-            )
+        return Recipe.findByIdAndUpdate(
+            req.params.recipeMasterId,
+            { $set: req.body },
+            { new: true }
           )
+          .populate('style')
+          .populate('variants.grains.grainType')
+          .populate('variants.hops.hopsType')
+          .populate('variants.yeast.yeastType')
           .then(recipeMaster => {
-
             if (recipeMaster === null) {
-              const err = new Error(`Recipe with id: "${req.params.recipeMasterId}" not found`);
-              err.status = 404;
-              return next(err);
+              throw httpError(404, `Recipe with id: "${req.params.recipeMasterId}" not found`);
             }
 
             res.statusCode = 200;
             res.setHeader('content-type', 'application/json');
             res.json(recipeMaster);
-
           });
       })
-      .catch(err => next(err));
+      .catch(next);
   })
   .delete(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
         if (user === null) {
-          const err = new Error('User not found');
-          err.status = 404;
-          return next(err);
+          throw httpError(404, 'User not found');
         }
 
         const indexToRemove = user.masterList.findIndex(master => {
@@ -333,18 +288,13 @@ recipeRouter.route('/private/master/:recipeMasterId')
         });
 
         if (indexToRemove === -1) {
-          const err = new Error(`Recipe with id: ${req.params.recipeMasterId} does not belong to user`);
-          err.status = 400;
-          return next(err);
+          throw httpError(400, `Recipe with id: ${req.params.recipeMasterId} does not belong to user`);
         }
 
         return Recipe.findByIdAndDelete(req.params.recipeMasterId)
           .then(dbres => {
-
             if (dbres === null) {
-              const err = new Error(`Recipe with id: ${req.params.recipeMasterId} not found`);
-              err.status = 404;
-              return next(err);
+              throw httpError(404, `Recipe with id: ${req.params.recipeMasterId} not found`);
             }
 
             user.masterList.splice(indexToRemove, 1);
@@ -354,10 +304,9 @@ recipeRouter.route('/private/master/:recipeMasterId')
                 res.setHeader('content-type', 'application/json');
                 res.json(dbres);
               });
-
           });
       })
-      .catch(err => next(err));
+      .catch(next);
   });
 
 recipeRouter.route('/private/master/:recipeMasterId/variant/:recipeVariantId')
@@ -365,35 +314,25 @@ recipeRouter.route('/private/master/:recipeMasterId/variant/:recipeVariantId')
     User.findById(req.user.id)
       .then(user => {
         if (user === null) {
-          const err = new Error('User not found');
-          err.status = 404;
-          return next(err);
+          throw httpError(404, 'User not found');
         }
 
         if (!user.masterList.some(_recipeMaster => _recipeMaster.equals(req.params.recipeMasterId))) {
-          const err = new Error(`Recipe with id: ${req.params.recipeMasterId} does not belong to User`);
-          err.status = 400;
-          return next(err);
+          throw httpError(400, `Recipe with id: ${req.params.recipeMasterId} does not belong to User`);
         }
 
-        // return Recipe.findById(req.params.recipeMasterId)
-        //   .populate('variants.grains.grainType')
-        //   .populate('variants.hops.hopsType')
-        //   .populate('variants.yeast.yeastType')
-        return populateAll(Recipe.findById(req.params.recipeMasterId))
+        return Recipe.findById(req.params.recipeMasterId)
+          .populate('variants.grains.grainType')
+          .populate('variants.hops.hopsType')
+          .populate('variants.yeast.yeastType')
           .then(recipeMaster => {
-
             if (recipeMaster === null) {
-              const err = new Error(`Recipe with id: ${req.params.recipeMasterId} not found`);
-              err.status = 404;
-              return next(err);
+              throw httpError(404, `Recipe with id: ${req.params.recipeMasterId} not found`);
             }
 
             const variant = recipeMaster.variants.find(_variant => _variant.equals(req.params.recipeVariantId));
             if (variant === undefined) {
-              const err = new Error(`Recipe variant with id: ${req.params.recipeVariantId} not found`);
-              err.status = 404;
-              return next(err);
+              throw httpError(404, `Recipe variant with id: ${req.params.recipeVariantId} not found`);
             }
 
             res.statusCode = 200;
@@ -402,37 +341,28 @@ recipeRouter.route('/private/master/:recipeMasterId/variant/:recipeVariantId')
           });
 
       })
-      .catch(err => next(err));
+      .catch(next);
   })
   .patch(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
         if (user === null) {
-          const err = new Error('Could not find user');
-          err.status = 404;
-          return next(err);
+          throw httpError(404, 'User not found');
         }
 
         if (!user.masterList.some(_recipeMaster => _recipeMaster.equals(req.params.recipeMasterId))) {
-          const err = new Error(`Recipe with id: ${req.params.recipeMasterId} does not belong to User`);
-          err.status = 400;
-          return next(err);
+          throw httpError(400, `Recipe with id: ${req.params.recipeMasterId} does not belong to User`);
         }
 
         return Recipe.findById(req.params.recipeMasterId)
           .then(recipeMaster => {
-
             if (recipeMaster === null) {
-              const err = new Error(`Recipe with id: ${req.params.recipeMasterId} not found`);
-              err.status = 404;
-              return next(err);
+              throw httpError(404, `Recipe with id: ${req.params.recipeMasterId} not found`);
             }
 
             const variant = recipeMaster.variants.find(_variant => _variant.equals(req.params.recipeVariantId));
             if (variant === undefined) {
-              const err = new Error(`Recipe variant with id: ${req.params.recipeVariantId} not found`);
-              err.status = 404;
-              return next(err);
+              throw httpError(404, `Recipe variant with id: ${req.params.recipeVariantId} not found`);
             }
 
             if (recipeMaster.variants.length > 1 && req.body.isMaster) {
@@ -449,11 +379,6 @@ recipeRouter.route('/private/master/:recipeMasterId/variant/:recipeVariantId')
                 return Recipe.populate(
                   recipeMaster,
                   populationPaths
-                  // [
-                  //   { path: 'variants.grains.grainType'},
-                  //   { path: 'variants.hops.hopsType'},
-                  //   { path: 'variants.yeast.yeastType'}
-                  // ]
                 );
               })
               .then(forResponse => {
@@ -464,22 +389,18 @@ recipeRouter.route('/private/master/:recipeMasterId/variant/:recipeVariantId')
               });
         });
       })
-      .catch(err => next(err));
+      .catch(next);
   })
   .delete(authenticate.verifyUser, (req, res, next) => {
-    User.findOne({_id: req.user.id, masterList: req.params.masterRecipeId})
-      .then(user => {
-
-        if (user === null) {
-          const err = new Error('Could not find user');
-          err.status = 404;
-          return next(err);
+    User.find({_id: req.user.id, masterList: req.params.recipeMasterId})
+      .then(_user => {
+        if (_user === null || _user.length === 0) {
+          throw httpError(404, 'User not found');
         }
 
+        const user = _user[0];
         if (!user.masterList.some(_recipeMaster => _recipeMaster.equals(req.params.recipeMasterId))) {
-          const err = new Error(`Recipe with id: ${req.params.recipeMasterId} does not belong to User`);
-          err.status = 400;
-          return next(err);
+          throw httpError(400, `Recipe with id: ${req.params.recipeMasterId} does not belong to User`);
         }
 
         return Recipe.findById(req.params.recipeMasterId);
@@ -487,19 +408,16 @@ recipeRouter.route('/private/master/:recipeMasterId/variant/:recipeVariantId')
       .then(recipeMaster => {
         const variantIndex = recipeMaster.variants.findIndex(_variant => _variant.equals(req.params.recipeVariantId));
         if (variantIndex === -1) {
-          const err = new Error(`Recipe variant with id: ${req.params.recipeVariantId} not found`);
-          err.status = 404;
-          return next(err);
+          throw httpError(404, `Recipe variant with id: ${req.params.recipeVariantId} not found`);
         }
 
         // if deleting the master variant, set the first available variant as the new master
         // must have at least 2 variants present
         if (recipeMaster.variants[variantIndex].isMaster) {
           if (recipeMaster.variants.length < 2) {
-            const err = new Error('At least one variant is required to be stored: deletion cannot be performed');
-            err.status = 400;
-            return next(err);
+            throw httpError(400, 'At least one variant is required to be stored: deletion cannot be performed');
           }
+
           const newMaster = recipeMaster.variants[variantIndex === 0 ? 1: 0];
           newMaster.isMaster = true;
           recipeMaster.master = newMaster._id;
@@ -513,7 +431,7 @@ recipeRouter.route('/private/master/:recipeMasterId/variant/:recipeVariantId')
         res.setHeader('content-type', 'application/json');
         res.json(dbres);
       })
-      .catch(err => next(err));
+      .catch(next);
   });
 
 module.exports = recipeRouter;
