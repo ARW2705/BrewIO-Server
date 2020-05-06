@@ -2,7 +2,7 @@
 
 /* Module Imports */
 
-const createError = require('http-errors');
+const httpError = require('./utils/http-error');
 const express = require('express');
 const path = require('path');
 const logger = require('morgan');
@@ -21,8 +21,8 @@ const apiVersion = 'brew_io_api_v1.0.0';
 
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
-const recipeRouter = require('./routes/recipe');
-const processRouter = require('./routes/process');
+const recipeRouter = require('./routes/recipe/recipe');
+const processRouter = require('./routes/process/process');
 const grainsRouter = require('./routes/library/grains');
 const hopsRouter = require('./routes/library/hops');
 const yeastRouter = require('./routes/library/yeast');
@@ -37,7 +37,8 @@ const connect = mongoose.connect(
   {
     keepAlive: true,
     keepAliveInitialDelay: 300000,
-    useNewUrlParser: true
+    useNewUrlParser: true,
+    useFindAndModify: false
   }
 );
 connect.then(() => {
@@ -68,11 +69,6 @@ app.use(`/${apiVersion}/users`, usersRouter);
 app.use(`/${apiVersion}/recipes`, recipeRouter);
 app.use(`/${apiVersion}/process`, processRouter);
 app.use(`/${apiVersion}/inventory`, inventoryRouter);
-
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
-});
 
 app.use((err, req, res, next) => {
   if (err.name === 'ValidationError' || err.name === 'MongoError') {
