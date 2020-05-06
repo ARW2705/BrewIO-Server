@@ -81,8 +81,6 @@ const variantSchema = new Schema({
   yeast: [yeastBatchSchema],
   otherIngredients: [otherIngredientsSchema],
   processSchedule: [processSchema]
-}, {
-  timestamps: true
 });
 
 module.exports = variantSchema;
