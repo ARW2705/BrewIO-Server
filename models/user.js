@@ -4,10 +4,6 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const passportLocalMongoose = require('passport-local-mongoose');
 
-const recipeMasterSchema = require('../models/recipe-master');
-const inProgressSchema = require('../models/in-progress');
-const inventorySchema = require('../models/inventory');
-
 const userSchema = new Schema({
   firstname: {
     type: String
@@ -31,16 +27,16 @@ const userSchema = new Schema({
     type: String,
     default: 'e'
   },
-  inProgressList: [
+  activeBatchList: [
     {
       type: Schema.Types.ObjectId,
-      ref: 'InProgress'
+      ref: 'Batch'
     }
   ],
   masterList: [
     {
       type: Schema.Types.ObjectId,
-      ref: 'RecipeMaster'
+      ref: 'Recipe'
     }
   ],
   friendList: [
