@@ -14,7 +14,6 @@ const yeastBatchSchema = new Schema({
   },
   requiresStarter: {
     type: Boolean,
-    required: true,
     default: false
   },
   notes: [{
