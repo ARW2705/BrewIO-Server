@@ -5,9 +5,9 @@ const staticLibraryProperties = [
   'style'
 ];
 
-const defaultIdRegex = RegExp('^[0-9]+', 'g');
+const defaultIdRegex = new RegExp(/^\d+$/);
 
-module.exports = function removeDefaultIds => {
+module.exports = function removeDefaultIds(obj) {
   if (Array.isArray(obj)) {
     for (let item of obj) {
       if (typeof item === 'object' && item !== null) {
@@ -18,11 +18,11 @@ module.exports = function removeDefaultIds => {
     for (const key in obj) {
       if (staticLibraryProperties.includes(key)) continue;
 
-      if (key === '_id' && defaultIdRegex.test(key)) {
+      if (key === '_id' && defaultIdRegex.test(obj[key])) {
         delete obj[key];
       } else if (typeof obj[key] === 'object' && obj[key] !== null) {
         removeDefaultIds(obj[key]);
       }
     }
   }
-};
+}
