@@ -5,7 +5,6 @@ const bodyParser = require('body-parser');
 const passport = require('passport');
 
 const User = require('../models/user');
-const RecipeMaster = require('../models/recipe-master');
 const authenticate = require('../authenticate');
 
 const userRouter = express.Router();
@@ -95,47 +94,12 @@ userRouter.post('/signup', async(req, res, next) => {
 userRouter.route('/profile')
   .get(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
-      .populate({
-        path: 'masterList',
-        populate: {
-          path: 'style'
-        }
-      })
-      .populate({
-        path: 'masterList',
-        populate: {
-          path: 'recipes',
-          populate: {
-            path: 'grains.grainType'
-          }
-        }
-      })
-      .populate({
-        path: 'masterList',
-        populate: {
-          path: 'recipes',
-          populate: {
-            path: 'hops.hopsType'
-          }
-        }
-      })
-      .populate({
-        path: 'masterList',
-        populate: {
-          path: 'recipes',
-          populate: {
-            path: 'yeast.yeastType'
-          }
-        }
-      })
-      .populate({
-        path: 'inProgressList',
-        populate: 'recipe'
-      })
-      .populate({
-        path: 'inventoryList',
-        populate: 'itemDetails.master itemDetails.recipe'
-      })
+      .populate('masterList.style')
+      .populate('masterList.variants.grains.grainType')
+      .populate('masterList.variants.hops.hopsType')
+      .populate('masterList.variants.yeast.yeastType')
+      .populate('activeBatchList.recipe')
+      .populate('inventoryList.itemDetails.master inventoryList.itemDetails.recipe')
       .then(user => {
         if (user !== null) {
           const response = {
@@ -145,7 +109,7 @@ userRouter.route('/profile')
             lastname: user.lastname,
             email: user.email,
             masterList: user.masterList,
-            inProgressList: user.inProgressList,
+            activeBatchList: user.activeBatchList,
             inventoryList: user.inventoryList
           };
           res.statusCode = 200;
