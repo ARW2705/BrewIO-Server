@@ -30,7 +30,7 @@ processRouter.route('/batch')
             res.json(activeBatchList);
           });
       })
-      .catch(error => next(error));
+      .catch(next);
   });
 
 processRouter.route('/batch/:batchId')
@@ -52,7 +52,7 @@ processRouter.route('/batch/:batchId')
             res.json(batch);
           });
       })
-      .catch(error => next(error));
+      .catch(next);
   })
   .patch(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
@@ -76,7 +76,7 @@ processRouter.route('/batch/:batchId')
             res.json(updatedBatch);
           });
       })
-      .catch(error => next(error));
+      .catch(next);
   })
   .delete(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
@@ -106,7 +106,7 @@ processRouter.route('/batch/:batchId')
               });
           });
       })
-      .catch(error => next(error));
+      .catch(next);
   });
 
 processRouter.route('/batch/:batchId/step/:stepId')
@@ -133,7 +133,7 @@ processRouter.route('/batch/:batchId/step/:stepId')
             res.json(step);
           });
       })
-      .catch(error => next(error))
+      .catch(next)
   });
 
 processRouter.route('/user/:userId/master/:recipeMasterId/variant/:recipeVariantId')
@@ -201,7 +201,7 @@ processRouter.route('/user/:userId/master/:recipeMasterId/variant/:recipeVariant
           });
       })
     })
-    .catch(error => next(error));
+    .catch(next);
   });
 
 module.exports = processRouter;
