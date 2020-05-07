@@ -1,6 +1,6 @@
 'use strict';
 
-const createError = require('http-errors');
+const httpError = require('../../utils/http-error');
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
@@ -16,61 +16,69 @@ grainsRouter.route('/')
   .get((req, res, next) => {
     Grains.find({})
       .then(grains => {
+        if (grains === null || grains.length === 0) {
+          throw throwError(404, 'Grain entries not found');
+        }
+
         res.statusCode = 200;
         res.setHeader('content-type', 'application/json');
         res.json(grains);
-      }, error => next(error))
-      .catch(error => next(error));
+      })
+      .catch(next);
   })
   .post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Grains.create(req.body)
       .then(grains => {
+        if (grains === null) {
+          throw throwError(500, 'Failed to create new grains instance');
+        }
+
         res.statusCode = 201;
         res.setHeader('content-type', 'application/json');
         res.json(grains);
-      }, error => next(error))
-      .catch(error => next(error));
+      })
+      .catch(next);
   });
 
 grainsRouter.route('/:grainsId')
   .get((req, res, next) => {
     Grains.findById(req.params.grainsId)
       .then(grains => {
-        if (grains !== null) {
-          res.statusCode = 200;
-          res.setHeader('content-type', 'application/json');
-          res.json(grains);
-        } else {
-          return next(createError(404));
+        if (grains === null) {
+          throw throwError(404, 'Grains instance not found');
         }
-      }, error => next(error))
-      .catch(error => next(error))
+
+        res.statusCode = 200;
+        res.setHeader('content-type', 'application/json');
+        res.json(grains);
+      })
+      .catch(next)
   })
   .patch(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Grains.findByIdAndUpdate(req.params.grainsId, req.body, {new: true})
       .then(grains => {
-        if (grains !== null) {
-          res.statusCode = 200;
-          res.setHeader('content-type', 'application/json');
-          res.json(grains);
-        } else {
-          return next(createError(404));
+        if (grains === null) {
+          throw throwError(500, 'Failed to update grains instance');
         }
-      }, error => next(error))
-      .catch(error => next(error));
+
+        res.statusCode = 200;
+        res.setHeader('content-type', 'application/json');
+        res.json(grains);
+      })
+      .catch(next);
   })
   .delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Grains.findByIdAndDelete(req.params.grainsId)
       .then(dbres => {
-        if (dbres !== null) {
-          res.statusCode = 200;
-          res.setHeader('content-type', 'application/json');
-          res.json(dbres);
-        } else {
-          return next(createError(404));
+        if (dbres === null) {
+          throw throwError(500, 'Failed to delete grains instance');
         }
-      }, error => next(error))
-      .catch(error => next(error));
+
+        res.statusCode = 200;
+        res.setHeader('content-type', 'application/json');
+        res.json(dbres);
+      })
+      .catch(next);
   });
 
 module.exports = grainsRouter;

@@ -1,6 +1,6 @@
 'use strict';
 
-const createError = require('http-errors');
+const httpError = require('../../utils/http-error');
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
@@ -19,20 +19,28 @@ yeastRouter.route('/')
     Yeast.find({})
       .populate('recommendedStyles')
       .then(yeast => {
+        if (yeast === null || yeast.length === 0) {
+          throw throwError(404, 'Yeast entries not found');
+        }
+
         res.statusCode = 200;
         res.setHeader('content-type', 'application/json');
         res.json(yeast);
       })
-      .catch(error => next(error));
+      .catch(next);
   })
   .post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Yeast.create(req.body)
       .then(yeast => {
+        if (yeast === null) {
+          throw throwError(500, 'Failed to create new yeast instance');
+        }
+
         res.statusCode = 201;
         res.setHeader('content-type', 'application/json');
         res.json(yeast);
       })
-      .catch(error => next(error));
+      .catch(next);
   });
 
 yeastRouter.route('/:yeastId')
@@ -40,38 +48,45 @@ yeastRouter.route('/:yeastId')
     Yeast.findById(req.params.yeastId)
       .populate('recommendedStyles')
       .then(yeast => {
-        if (yeast !== null) {
-          res.statusCode = 200;
-          res.setHeader('content-type', 'application/json');
-          res.json(yeast);
-        } else {
-          return next(createError(404));
+        if (yeast === null) {
+          throw throwError(404, 'Yeast instance not found');
         }
+
+        res.statusCode = 200;
+        res.setHeader('content-type', 'application/json');
+        res.json(yeast);
       })
-      .catch(error => next(error))
+      .catch(next)
   })
   .patch(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     if (req.body.styles) {
       Yeast.findById(req.params.yeastId)
         .then(yeastToUpdate => {
-          const calls = [];
-          if (yeastToUpdate !== null) {
-            req.body.styles.forEach(name => {
-              calls.push(callback => {
-                Styles.findOne({name: name})
-                  .then(style => {
-                    if (style !== null) {
-                      if (!yeastToUpdate.recommendedStyles.find(elem => elem.equals(style.id))) {
-                        yeastToUpdate.recommendedStyles.push(style.id);
-                      }
-                      callback(null, true);
-                    } else {
-                      callback('Style not found', null);
-                    }
-                  });
-              })
-            })
+          if (yeastToUpdate === null) {
+            throw throwError(404, 'Yeast instance not found');
           }
+
+          const calls = [];
+
+          // construct queries for Styles to search and then populate yeast doc
+          // with matched Style ids - to be called later once all queries are ready
+          req.body.styles.forEach(name => {
+            calls.push(callback => {
+              Styles.findOne({name: name})
+                .then(style => {
+                  if (style === null) {
+                    callback('Style not found', null);
+                  } else {
+                    if (!yeastToUpdate.recommendedStyles.find(elem => elem.equals(style.id))) {
+                      yeastToUpdate.recommendedStyles.push(style.id);
+                    }
+                    callback(null, true);
+                  }
+                });
+            })
+          });
+
+          // Perform all pre-made queries, then respond with original yeast save result
           return async.parallel(calls, (err, results) => {
             if (err) {
               console.log('error', err);
@@ -87,33 +102,33 @@ yeastRouter.route('/:yeastId')
             }
           })
         })
-        .catch(error => next(error));
+        .catch(next);
     } else {
       Yeast.findByIdAndUpdate(req.params.yeastId, req.body, {new: true})
         .then(yeast => {
-          if (yeast !== null) {
-            res.statusCode = 200;
-            res.setHeader('content-type', 'application/json');
-            res.json(yeast);
-          } else {
-            return next(createError(404));
+          if (yeast === null) {
+            throw throwError(404, 'Yeast instance not found');
           }
+
+          res.statusCode = 200;
+          res.setHeader('content-type', 'application/json');
+          res.json(yeast);
         })
-        .catch(error => next(error));
+        .catch(next);
     }
   })
   .delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Yeast.findByIdAndDelete(req.params.yeastId)
       .then(dbres => {
-        if (dbres !== null) {
-          res.statusCode = 200;
-          res.setHeader('content-type', 'application/json');
-          res.json(dbres);
-        } else {
-          return next(createError(404));
+        if (dbres === null) {
+          throw throwError(500, 'Failed to delete yeast instance');
         }
+
+        res.statusCode = 200;
+        res.setHeader('content-type', 'application/json');
+        res.json(dbres);
       })
-      .catch(error => next(error));
+      .catch(next);
   });
 
 module.exports = yeastRouter;

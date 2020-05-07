@@ -1,6 +1,6 @@
 'use strict';
 
-const createError = require('http-errors');
+const httpError = require('../../utils/http-error');
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
@@ -15,62 +15,70 @@ styleRouter.use(bodyParser.json());
 styleRouter.route('/')
   .get((req, res, next) => {
     Style.find({})
-      .then(style => {
+      .then(styles => {
+        if (styles === null || styles.length === 0) {
+          throw throwError(404, 'Style entries not found');
+        }
+
         res.statusCode = 200;
         res.setHeader('content-type', 'application/json');
-        res.json(style);
-      }, error => next(error))
-      .catch(error => next(error));
+        res.json(styles);
+      })
+      .catch(next);
   })
   .post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Style.create(req.body)
       .then(style => {
+        if (style === null) {
+          throw throwError(500, 'Failed to create new style instance');
+        }
+
         res.statusCode = 201;
         res.setHeader('content-type', 'application/json');
         res.json(style);
-      }, error => next(error))
-      .catch(error => next(error));
+      })
+      .catch(next);
   });
 
 styleRouter.route('/:styleId')
   .get((req, res, next) => {
     Style.findById(req.params.styleId)
       .then(style => {
-        if (style !== null) {
-          res.statusCode = 200;
-          res.setHeader('content-type', 'application/json');
-          res.json(style);
-        } else {
-          return next(createError(404));
+        if (style === null) {
+          throw throwError(404, 'Style instance not found');
         }
-      }, error => next(error))
-      .catch(error => next(error))
+
+        res.statusCode = 200;
+        res.setHeader('content-type', 'application/json');
+        res.json(style);
+      })
+      .catch(next)
   })
   .patch(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Style.findByIdAndUpdate(req.params.styleId, req.body, {new: true})
       .then(style => {
-        if (style !== null) {
-          res.statusCode = 200;
-          res.setHeader('content-type', 'application/json');
-          res.json(style);
-        } else {
-          return next(createError(404));
+        if (style === null) {
+          throw throwError(500, 'Failed to update style instance');
         }
-      }, error => next(error))
-      .catch(error => next(error));
+
+        res.statusCode = 200;
+        res.setHeader('content-type', 'application/json');
+        res.json(style);
+      })
+      .catch(next);
   })
   .delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Style.findByIdAndDelete(req.params.styleId)
       .then(dbres => {
-        if (dbres !== null) {
-          res.statusCode = 200;
-          res.setHeader('content-type', 'application/json');
-          res.json(dbres);
-        } else {
-          return next(createError(404));
+        if (dbres === null) {
+          throw throwError(500, 'Failed to delete style instance');
         }
-      }, error => next(error))
-      .catch(error => next(error));
+
+        res.statusCode = 200;
+        res.setHeader('content-type', 'application/json');
+        res.json(dbres);
+      })
+      .catch(next);
   });
 
 module.exports = styleRouter;
