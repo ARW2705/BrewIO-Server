@@ -69,7 +69,7 @@ recipeRouter.route('/public/master/:recipeMasterId')
           res.json(forResponse);
         });
       })
-      .catch(err => next(err));
+      .catch(next);
   });
 
 recipeRouter.route('/public/master/:recipeMasterId/variant/:recipeVariantId')
@@ -146,7 +146,7 @@ recipeRouter.route('/private')
           .then(newRecipeMaster => {
             newRecipeMaster.master = newRecipeMaster.variants[0];
             newRecipeMaster.variants[0].isMaster = true;
-            
+
             return newRecipeMaster.save()
               .then(() => {
                 user.masterList.push(newRecipeMaster);
