@@ -5,6 +5,10 @@ const Schema = mongoose.Schema;
 const passportLocalMongoose = require('passport-local-mongoose');
 
 const userSchema = new Schema({
+  cid: {
+    type: String,
+    default: ''
+  },
   firstname: {
     type: String
   },
@@ -26,6 +30,14 @@ const userSchema = new Schema({
   preferredUnits: {
     type: String,
     default: 'e'
+  },
+  userImageURL: {
+    type: String,
+    default: ''
+  },
+  labelImageURL: {
+    type: String,
+    default: ''
   },
   activeBatchList: [
     {

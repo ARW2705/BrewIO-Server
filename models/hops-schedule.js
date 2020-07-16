@@ -4,6 +4,10 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const hopsScheduleSchema = new Schema({
+  cid: {
+    type: String,
+    default: ''
+  },
   hopsType: {
     type: Schema.Types.ObjectId,
     ref: 'Hops'

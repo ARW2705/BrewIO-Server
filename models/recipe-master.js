@@ -6,6 +6,10 @@ const Schema = mongoose.Schema;
 const recipeVariant = require('./recipe-variant');
 
 const recipeSchema = new Schema({
+  cid: {
+    type: String,
+    default: ''
+  },
   owner: {
     type: Schema.Types.ObjectId,
     ref: 'User',
@@ -23,8 +27,8 @@ const recipeSchema = new Schema({
     type: String
   }],
   master: {
-    type: Schema.Types.ObjectId,
-    ref: 'Recipe'
+    type: String,
+    required: true
   },
   hasActiveBatch: {
     type: Boolean,
@@ -37,6 +41,10 @@ const recipeSchema = new Schema({
   isFriendsOnly: {
     type: Boolean,
     default: false
+  },
+  labelImageURL: {
+    type: String,
+    default: ''
   },
   variants: [ recipeVariant ]
 }, {

@@ -10,6 +10,10 @@ const otherIngredientsSchema = require('./other-ingredients');
 const processSchema = require('./process');
 
 const variantSchema = new Schema({
+  cid: {
+    type: String,
+    default: ''
+  },
   variantName: {
     type: String,
     default: 'Initial'

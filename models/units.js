@@ -3,31 +3,23 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const otherIngredientsSchema = new Schema({
-  cid: {
-    type: String,
-    default: ''
-  },
-  name: {
+const unitsSchema = new Schema({
+  volume: {
     type: String,
     required: true
   },
-  type: {
+  weight: {
     type: String,
     required: true
   },
-  description: {
+  temperature: {
     type: String,
     required: true
   },
-  quantity: {
-    type: Number,
-    required: true
-  },
-  units: {
+  specificGravity: {
     type: String,
     required: true
   }
 });
 
-module.exports = otherIngredientsSchema;
+module.exports = unitsSchema;
