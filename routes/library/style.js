@@ -17,7 +17,7 @@ styleRouter.route('/')
     Style.find({})
       .then(styles => {
         if (styles === null || styles.length === 0) {
-          throw throwError(404, 'Style entries not found');
+          throw httpError(404, 'Style entries not found');
         }
 
         res.statusCode = 200;
@@ -30,7 +30,7 @@ styleRouter.route('/')
     Style.create(req.body)
       .then(style => {
         if (style === null) {
-          throw throwError(500, 'Failed to create new style instance');
+          throw httpError(500, 'Failed to create new style instance');
         }
 
         res.statusCode = 201;
@@ -45,7 +45,7 @@ styleRouter.route('/:styleId')
     Style.findById(req.params.styleId)
       .then(style => {
         if (style === null) {
-          throw throwError(404, 'Style instance not found');
+          throw httpError(404, 'Style instance not found');
         }
 
         res.statusCode = 200;
@@ -58,7 +58,7 @@ styleRouter.route('/:styleId')
     Style.findByIdAndUpdate(req.params.styleId, req.body, {new: true})
       .then(style => {
         if (style === null) {
-          throw throwError(500, 'Failed to update style instance');
+          throw httpError(500, 'Failed to update style instance');
         }
 
         res.statusCode = 200;
@@ -71,7 +71,7 @@ styleRouter.route('/:styleId')
     Style.findByIdAndDelete(req.params.styleId)
       .then(dbres => {
         if (dbres === null) {
-          throw throwError(500, 'Failed to delete style instance');
+          throw httpError(500, 'Failed to delete style instance');
         }
 
         res.statusCode = 200;

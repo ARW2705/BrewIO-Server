@@ -20,7 +20,7 @@ yeastRouter.route('/')
       .populate('recommendedStyles')
       .then(yeast => {
         if (yeast === null || yeast.length === 0) {
-          throw throwError(404, 'Yeast entries not found');
+          throw httpError(404, 'Yeast entries not found');
         }
 
         res.statusCode = 200;
@@ -33,7 +33,7 @@ yeastRouter.route('/')
     Yeast.create(req.body)
       .then(yeast => {
         if (yeast === null) {
-          throw throwError(500, 'Failed to create new yeast instance');
+          throw httpError(500, 'Failed to create new yeast instance');
         }
 
         res.statusCode = 201;
@@ -49,7 +49,7 @@ yeastRouter.route('/:yeastId')
       .populate('recommendedStyles')
       .then(yeast => {
         if (yeast === null) {
-          throw throwError(404, 'Yeast instance not found');
+          throw httpError(404, 'Yeast instance not found');
         }
 
         res.statusCode = 200;
@@ -63,7 +63,7 @@ yeastRouter.route('/:yeastId')
       Yeast.findById(req.params.yeastId)
         .then(yeastToUpdate => {
           if (yeastToUpdate === null) {
-            throw throwError(404, 'Yeast instance not found');
+            throw httpError(404, 'Yeast instance not found');
           }
 
           const calls = [];
@@ -107,7 +107,7 @@ yeastRouter.route('/:yeastId')
       Yeast.findByIdAndUpdate(req.params.yeastId, req.body, {new: true})
         .then(yeast => {
           if (yeast === null) {
-            throw throwError(404, 'Yeast instance not found');
+            throw httpError(404, 'Yeast instance not found');
           }
 
           res.statusCode = 200;
@@ -121,7 +121,7 @@ yeastRouter.route('/:yeastId')
     Yeast.findByIdAndDelete(req.params.yeastId)
       .then(dbres => {
         if (dbres === null) {
-          throw throwError(500, 'Failed to delete yeast instance');
+          throw httpError(500, 'Failed to delete yeast instance');
         }
 
         res.statusCode = 200;

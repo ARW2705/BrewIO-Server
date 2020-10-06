@@ -17,7 +17,7 @@ grainsRouter.route('/')
     Grains.find({})
       .then(grains => {
         if (grains === null || grains.length === 0) {
-          throw throwError(404, 'Grain entries not found');
+          throw httpError(404, 'Grain entries not found');
         }
 
         res.statusCode = 200;
@@ -30,7 +30,7 @@ grainsRouter.route('/')
     Grains.create(req.body)
       .then(grains => {
         if (grains === null) {
-          throw throwError(500, 'Failed to create new grains instance');
+          throw httpError(500, 'Failed to create new grains instance');
         }
 
         res.statusCode = 201;
@@ -45,7 +45,7 @@ grainsRouter.route('/:grainsId')
     Grains.findById(req.params.grainsId)
       .then(grains => {
         if (grains === null) {
-          throw throwError(404, 'Grains instance not found');
+          throw httpError(404, 'Grains instance not found');
         }
 
         res.statusCode = 200;
@@ -58,7 +58,7 @@ grainsRouter.route('/:grainsId')
     Grains.findByIdAndUpdate(req.params.grainsId, req.body, {new: true})
       .then(grains => {
         if (grains === null) {
-          throw throwError(500, 'Failed to update grains instance');
+          throw httpError(500, 'Failed to update grains instance');
         }
 
         res.statusCode = 200;
@@ -71,7 +71,7 @@ grainsRouter.route('/:grainsId')
     Grains.findByIdAndDelete(req.params.grainsId)
       .then(dbres => {
         if (dbres === null) {
-          throw throwError(500, 'Failed to delete grains instance');
+          throw httpError(500, 'Failed to delete grains instance');
         }
 
         res.statusCode = 200;
