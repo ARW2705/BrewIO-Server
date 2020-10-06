@@ -1,15 +1,14 @@
 'use strict';
 
-const createError = require('http-errors');
+const httpError = require('../utils/http-error');
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
 const authenticate = require('../authenticate');
 const Inventory = require('../models/inventory');
-const RecipeMaster = require('../models/recipe-master');
-const Recipe = require('../models/recipe');
 const User = require('../models/user');
+const Recipe = require('../models/recipe-master');
 
 const inventoryRouter = express.Router();
 
@@ -19,104 +18,102 @@ inventoryRouter.route('/')
   .get(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
-        if (user != null) {
-          res.statusCode = 200;
-          res.setHeader('content-type', 'application/json');
-          res.json(user.inventory);
-        } else {
-          return next(createError(404, 'Could not find user record'));
+        if (user === null) {
+          throw httpError(404, 'Could not find user document');
         }
+        return Inventory.find({_id: {$in: user.inventoryList} });
       })
-      .catch(error => next(error));
+      .then(inventory => {
+        if (inventory === null) {
+          throw httpError(404, 'Inventory not found');
+        }
+        res.statusCode = 200;
+        res.setHeader('content-type', 'application/json');
+        res.json(inventory);
+      })
+      .catch(next);
   })
   .post(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
-        if (user != null) {
-          return Inventory.create(req.body)
-            .then(newItem => {
-              user.inventory.push(newItem);
-              return user.save()
-                .then(_update => {
-                  res.statusCode = 201;
-                  res.setHeader('content-type', 'application/json');
-                  res.json(newItem);
-                })
-            })
-        } else {
-          return next(createError(404, 'Could not find user record'));
+        if (user === null) {
+          throw httpError(404, 'Could not find user record');
         }
+        return Inventory.create(req.body)
+          .then(newItem => {
+            user.inventoryList.push(newItem);
+            return user.save()
+              .then(_update => {
+                res.statusCode = 201;
+                res.setHeader('content-type', 'application/json');
+                res.json(newItem);
+              })
+          })
       })
-      .catch(error => next(error));
+      .catch(next);
   });
 
 inventoryRouter.route('/:itemId')
   .get(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
-        if (user != null) {
-          return Inventory.findById(req.params.itemId)
-            .then(item => {
-              if (item != null) {
-                res.statusCode = 200;
-                res.setHeader('content-type', 'application/json');
-                res.json(item);
-              } else {
-                return next(createError(404, 'Could not find batch record'));
-              }
-            })
-        } else {
-          return next(createError(404, 'Could not find user record'));
+        if (user === null) {
+          throw httpError(404, 'Could not find user record');
         }
+        return Inventory.findById(req.params.itemId)
+          .then(item => {
+            if (item !== null) {
+              res.statusCode = 200;
+              res.setHeader('content-type', 'application/json');
+              return res.json(item);
+            }
+            throw httpError(404, 'Could not find batch record');
+          });
       })
       .catch(error => next(error));
   })
   .patch(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
-        if (user != null) {
-          return Inventory.findByIdAndUpdate(req.params.itemId, req.body, {new: true})
-            .then(updatedItem => {
-              if (updatedItem != null) {
-                res.statusCode = 200;
-                res.setHeader('content-type', 'application/json');
-                res.json(updatedItem);
-              } else {
-                return next(createError(404, 'Could not find batch record'));
-              }
-            })
-        } else {
-          return next(createError(404, 'Could not find user record'));
+        if (user === null) {
+          throw httpError(404, 'Could not find user record');
         }
+        return Inventory.findByIdAndUpdate(req.params.itemId, { $set: req.body }, {new: true});
       })
-      .catch(error => next(error));
+      .then(updatedItem => {
+        if (updatedItem === null) {
+          throw httpError(404, 'Could not find batch record');
+        }
+        res.statusCode = 200;
+        res.setHeader('content-type', 'application/json');
+        res.json(updatedItem);
+      })
+      .catch(next);
   })
   .delete(authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user.id)
       .then(user => {
-        if (user != null) {
-          return Inventory.findByIdAndDelete(req.params.itemId)
-            .then(dbres => {
-              if (dbres != null) {
-                const toDeleteIndex = user.inventory.findIndex(item => {
-                  return item._id.equals(req.params.itemId);
-                });
-                user.inventory.splice(toDeleteIndex, 1);
-                return user.save()
-                  .then(userUpdated => {
-                    res.statusCode = 200;
-                    res.setHeader('content-type', 'application/json');
-                    res.json(dbres);
-                  });
-              } else {
-                return next(createError(404, 'Could not find batch record'));
-              }
-            })
-        } else {
-          return next(createError(404, 'Could not find user record'));
+        if (user === null) {
+          throw httpError(404, 'Could not find user record');
         }
+        return Inventory.findByIdAndDelete(req.params.itemId)
+          .then(dbres => {
+            if (dbres === null) {
+              throw httpError(404, 'Could not find batch record');
+            }
+            const toDeleteIndex = user.inventoryList.findIndex(item => {
+              return item._id.equals(req.params.itemId);
+            });
+            user.inventoryList.splice(toDeleteIndex, 1);
+            return user.save()
+              .then(() => {
+                res.statusCode = 200;
+                res.setHeader('content-type', 'application/json');
+                res.json(dbres);
+              });
+          });
       })
-      .catch(error => next(error));
+      .catch(next);
   });
 
 module.exports = inventoryRouter;
