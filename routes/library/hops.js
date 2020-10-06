@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const async = require('async');
 
 const authenticate = require('../../authenticate');
+const hasNearMatch = require('../../utils/near-match-regex');
 const Hops = require('../../models/hops');
 const Styles = require('../../models/style');
 
@@ -21,7 +22,7 @@ hopsRouter.route('/')
       .populate('alternatives')
       .then(hops => {
         if (hops === null || hops.length === 0) {
-          throw throwError(404, 'Hops entries not found');
+          throw httpError(404, 'Hops entries not found');
         }
 
         res.statusCode = 200;
@@ -34,7 +35,7 @@ hopsRouter.route('/')
     Hops.create(req.body)
       .then(hops => {
         if (hops === null) {
-          throw throwError(500, 'Failed to create new hops instance');
+          throw httpError(500, 'Failed to create new hops instance');
         }
 
         res.statusCode = 201;
@@ -51,7 +52,7 @@ hopsRouter.route('/:hopsId')
       .populate('alternatives')
       .then(hops => {
         if (hops === null) {
-          throw throwError(404, 'Hops instance not found');
+          throw httpError(404, 'Hops instance not found');
         }
 
         res.statusCode = 200;
@@ -65,7 +66,7 @@ hopsRouter.route('/:hopsId')
       Hops.findById(req.params.hopsId)
         .then(hopsToUpdate => {
           if (hopsToUpdate === null) {
-            throw throwError(404, 'Hops instance not found');
+            throw httpError(404, 'Hops instance not found');
           }
 
           const calls = [];
@@ -140,7 +141,7 @@ hopsRouter.route('/:hopsId')
       Hops.findByIdAndUpdate(req.params.hopsId, req.body, {new: true})
         .then(hops => {
           if (hops === null) {
-            throw throwError(404, 'Hops instance not found');
+            throw httpError(404, 'Hops instance not found');
           }
 
           res.statusCode = 200;
@@ -154,7 +155,7 @@ hopsRouter.route('/:hopsId')
     Hops.findByIdAndDelete(req.params.hopsId)
       .then(dbres => {
         if (dbres === null) {
-          throw throwError(500, 'Failed to delete hops instance');
+          throw httpError(500, 'Failed to delete hops instance');
         }
 
         res.statusCode = 200;
@@ -163,5 +164,89 @@ hopsRouter.route('/:hopsId')
       })
       .catch(next);
   });
+
+hopsRouter.patch('/internal/populate-hops-entries', authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+  Promise.all([
+    Styles.find({}),
+    Hops.find({})
+  ])
+  .then(libraries => {
+    const [styleList, hopsList] = libraries;
+
+    const updateList = req.body;
+
+    const calls = [];
+
+    updateList.forEach(hops => {
+      const alternativeHopsIds = [];
+      hops.alternatives.forEach(hopsName => {
+        let index = hopsList.findIndex(_hops => {
+          return hasNearMatch(hopsName, _hops.name)
+        });
+        if (index !== -1) {
+          do {
+            alternativeHopsIds.push(hopsList[index]._id);
+          } while (
+            index < hopsList.length - 1
+            && hasNearMatch(hopsName, hopsList[++index].name)
+          );
+        }
+      });
+      hops.alternatives = alternativeHopsIds;
+
+      const styleIds = [];
+      hops.usedFor.forEach(styleName => {
+        let index = styleList.findIndex(_style => {
+          return hasNearMatch(styleName, _style.name);
+        });
+        if (index !== -1) {
+          do {
+            styleIds.push(styleList[index]._id);
+          } while (
+            index < styleList.length -1
+            && hasNearMatch(styleName, styleList[++index].name)
+          );
+        }
+      });
+      hops.usedFor = styleIds;
+
+      calls.push(callback => {
+        Hops.findOneAndUpdate(
+          { name: hops.name },
+          {
+            $set: {
+              alternatives: hops.alternatives,
+              usedFor: hops.usedFor
+            }
+          },
+          { new: true }
+        )
+        .then(updatedHops => {
+          if (updatedHops === null) {
+            callback(`${hops.name} update failed`, null);
+          } else {
+            callback(null, updatedHops);
+          }
+        })
+        .catch(error => {
+          callback(error, null);
+        });
+      });
+    });
+
+    return calls;
+  })
+  .then(hopsUpdates => {
+    return async.parallel(hopsUpdates, (errors, results) => {
+      res.statusCode = errors ? 207: 200;
+      res.setHeader('content-type', 'application/json');
+      res.json({
+        errors: errors,
+        successes: results
+      });
+    });
+  })
+  .catch(next);
+});
 
 module.exports = hopsRouter;
