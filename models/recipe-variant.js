@@ -7,7 +7,7 @@ const grainBillSchema = require('./grain-bill');
 const hopsScheduleSchema = require('./hops-schedule');
 const yeastBatchSchema = require('./yeast-batch');
 const otherIngredientsSchema = require('./other-ingredients');
-const processSchema = require('./process');
+const stepSchema = require('./step');
 
 const variantSchema = new Schema({
   cid: {
@@ -84,7 +84,7 @@ const variantSchema = new Schema({
   hops: [hopsScheduleSchema],
   yeast: [yeastBatchSchema],
   otherIngredients: [otherIngredientsSchema],
-  processSchedule: [processSchema]
+  processSchedule: [stepSchema]
 });
 
 module.exports = variantSchema;
