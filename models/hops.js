@@ -19,7 +19,7 @@ const hopsSchema = new Schema({
   },
   description: {
     type: String,
-    required: true
+    default: ""
   },
   usedFor: [{
     type: Schema.Types.ObjectId,
