@@ -39,7 +39,8 @@ const connect = mongoose.connect(
     keepAliveInitialDelay: 300000,
     useNewUrlParser: true,
     useFindAndModify: false,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
+    useCreateIndex: true
   }
 );
 connect.then(() => {
