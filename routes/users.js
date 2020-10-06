@@ -17,11 +17,25 @@ userRouter.get('/checkJWToken', (req, res) => {
     if (!user) {
       res.statusCode = 401;
       res.setHeader('content-type', 'application/json');
-      return res.json({status: 'JWT invalid', success: false, user: null, error: data});
+      return res.json(
+        {
+          status: 'JWT invalid',
+          success: false,
+          user: null,
+          error: data
+        }
+      );
     } else {
       res.statusCode = 200;
       res.setHeader('content-type', 'application/json');
-      return res.json({status: 'JWT valid', success: true, user: user, error: null});
+      return res.json(
+        {
+          status: 'JWT valid',
+          success: true,
+          user: user,
+          error: null
+        }
+      );
     }
   })(req, res);
 });
@@ -47,7 +61,8 @@ userRouter.post('/login', (req, res, next) => {
             email: userProfile.email || undefined,
             friendList: userProfile.friendList,
             token: token,
-            preferredUnits: userProfile.preferredUnits
+            preferredUnitSystem: userProfile.preferredUnitSystem,
+            units: userProfile.units
           };
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
@@ -59,19 +74,27 @@ userRouter.post('/login', (req, res, next) => {
 
 userRouter.post('/signup', async(req, res, next) => {
   const users = await User.find({});
-  if (users.length > 5) {
+  if (users.length > 20) {
     res.statusCode = 423;
     res.setHeader('content-type', 'application/json');
-    return res.json({success: false, status: 'Max users reached: contact admin'});
+    return res.json({success: false, status: 'Max users reached for this version: contact admin'});
   }
-  User.register(new User({username: req.body.username, email: req.body.email}), req.body.password,
+  User.register(
+    new User(
+      {
+        username: req.body.username,
+        email: req.body.email,
+        preferredUnitSystem: req.body.preferredUnitSystem,
+        units: req.body.units
+      }
+    ),
+    req.body.password,
     (error, user) => {
       if (error) {
         res.statusCode = 500;
         res.setHeader('content-type', 'application/json');
         res.json(error);
       } else {
-        console.log('signup', user, req.body);
         if (req.body.firstname) user.firstname = req.body.firstname;
         if (req.body.lastname) user.lastname = req.body.lastname;
         user.save((error, user) => {
@@ -102,15 +125,15 @@ userRouter.route('/profile')
       .populate('inventoryList.itemDetails.master inventoryList.itemDetails.recipe')
       .then(user => {
         if (user !== null) {
+
           const response = {
             _id: user._id,
             username: user.username,
             firstname: user.firstname,
             lastname: user.lastname,
             email: user.email,
-            masterList: user.masterList,
-            activeBatchList: user.activeBatchList,
-            inventoryList: user.inventoryList
+            preferredUnitSystem: user.preferredUnitSystem,
+            units: user.units
           };
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');

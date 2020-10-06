@@ -3,6 +3,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const passportLocalMongoose = require('passport-local-mongoose');
+const SelectedUnitsSchema = require('./units');
 
 const userSchema = new Schema({
   cid: {
@@ -27,9 +28,13 @@ const userSchema = new Schema({
     type: Boolean,
     default: false
   },
-  preferredUnits: {
+  preferredUnitSystem: {
     type: String,
-    default: 'e'
+    default: 'english standard'
+  },
+  units: {
+    type: SelectedUnitsSchema,
+    required: true
   },
   userImageURL: {
     type: String,
@@ -39,7 +44,7 @@ const userSchema = new Schema({
     type: String,
     default: ''
   },
-  activeBatchList: [
+  batchList: [
     {
       type: Schema.Types.ObjectId,
       ref: 'Batch'
