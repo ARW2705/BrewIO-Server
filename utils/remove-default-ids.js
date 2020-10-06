@@ -1,3 +1,5 @@
+const hasDefaultIdType = require('./has-default-id');
+
 const staticLibraryProperties = [
   'grainType',
   'hopsType',
@@ -18,7 +20,7 @@ module.exports = function removeDefaultIds(obj) {
     for (const key in obj) {
       if (staticLibraryProperties.includes(key)) continue;
 
-      if (key === '_id' && defaultIdRegex.test(obj[key])) {
+      if ((key === '_id' || key === 'master') && hasDefaultIdType(obj[key])) {
         delete obj[key];
       } else if (typeof obj[key] === 'object' && obj[key] !== null) {
         removeDefaultIds(obj[key]);
