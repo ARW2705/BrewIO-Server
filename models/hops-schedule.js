@@ -16,7 +16,7 @@ const hopsScheduleSchema = new Schema({
     type: Number,
     required: true
   },
-  addAt: {
+  duration: {
     type: Number,
     required: true
   },
