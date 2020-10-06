@@ -14,7 +14,7 @@ const contextSchema = new Schema({
   },
   recipeImageURL: {
     type: String,
-    required: true
+    default: ''
   }
 });
 
