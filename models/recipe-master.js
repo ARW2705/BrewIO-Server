@@ -30,10 +30,6 @@ const recipeSchema = new Schema({
     type: String,
     required: true
   },
-  hasActiveBatch: {
-    type: Boolean,
-    default: false
-  },
   isPublic: {
     type: Boolean,
     default: false
