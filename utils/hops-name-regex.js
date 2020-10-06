@@ -1,6 +1,6 @@
 module.exports = function(searchName, targetName) {
   return RegExp(
-    searchName
+    targetName
       .split(' ')
       .reduce(
         (acc, curr) => {
@@ -8,6 +8,5 @@ module.exports = function(searchName, targetName) {
         },
         ''
       )
-  )
-  .test(targetName.toLowerCase());
+  );
 }
