@@ -2,46 +2,54 @@
 
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const optionalItemDataSchema = require('./optional-item-data');
 
 const inventorySchema = new Schema({
   cid: {
     type: String,
-    default: ''
-  },
-  owner: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
     required: true
   },
-  stockCount: {
-    type: Number,
-    default: 0
-  },
-  stockQuantity: {
-    type: Number,
-    default: 0
+  supplierName: {
+    type: String,
+    required: true
   },
   stockType: {
     type: String,
     required: true
   },
-  labelImageUrl: {
-    type: String
-  },
-  packageDate: {
-    type: Date,
+  initialQuantity: {
+    type: Number,
     required: true
   },
-  itemDetails: {
-    master: {
-      type: Schema.Types.ObjectId,
-      ref: 'RecipeMaster'
-    },
-    recipe: {
-      type: Schema.Types.ObjectId,
-      ref: 'Recipe'
-    }
-  }
+  currentQuantity: {
+    type: Number,
+    required: true
+  },
+  description: {
+    type: String,
+    default: ''
+  },
+  itemName: {
+    type: String,
+    required: true
+  },
+  itemStyleId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Style'
+  },
+  itemStyleName: {
+    type: String,
+    required: true
+  },
+  itemABV: {
+    type: Number,
+    required: true
+  },
+  sourceType: {
+    type: String,
+    required: true
+  },
+  optionalItemData: optionalItemDataSchema
 }, {
   timestamps: true
 });
