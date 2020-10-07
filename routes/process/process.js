@@ -23,11 +23,53 @@ processRouter.route('/batch')
           throw httpError(404, 'User not found');
         }
 
-        return Batch.find({ _id: { $in: user.activeBatchList } })
-          .then(activeBatchList => {
-            res.statusCode = 200;
-            res.setHeader('content-type', 'application/json');
-            res.json(activeBatchList);
+        return Batch.find({
+          _id: { $in: user.batchList }
+        })
+        .then(batchList => {
+          const activeBatches = [];
+          const archiveBatches = [];
+
+          batchList.forEach(batch => {
+            if (batch.isArchived) {
+              archiveBatches.push(batch);
+            } else {
+              activeBatches.push(batch);
+            }
+          });
+
+          res.statusCode = 200;
+          res.setHeader('content-type', 'application/json');
+          res.json(
+            {
+              activeBatches: activeBatches,
+              archiveBatches: archiveBatches
+            }
+          );
+        });
+      })
+      .catch(next);
+  })
+  .post(authenticate.verifyUser, (req, res, next) => {
+    User.findById(req.user.id)
+      .then(user => {
+        if (user === null) {
+          throw httpError(404, 'User not found');
+        }
+
+        if (req.body.owner === 'offline') {
+          req.body.owner = user._id;
+        }
+
+        return Batch.create(req.body)
+          .then(newBatch => {
+            user.batchList.push(newBatch);
+            return user.save()
+              .then(() => {
+                res.statusCode = 201;
+                res.setHeader('content-type', 'application/json');
+                res.json(newBatch);
+              });
           });
       })
       .catch(next);
@@ -61,7 +103,7 @@ processRouter.route('/batch/:batchId')
           throw httpError(404, 'User not found');
         }
 
-        if (!user.activeBatchList.some(item => item.equals(req.params.batchId))) {
+        if (!user.batchList.some(item => item.equals(req.params.batchId))) {
           throw httpError(400, 'Batch does not belong to user');
         }
 
@@ -85,9 +127,7 @@ processRouter.route('/batch/:batchId')
           throw httpError(404, 'User not found');
         }
 
-        const toDeleteIndex = user.activeBatchList.findIndex(item => item.equals(req.params.batchId));
-
-        if (toDeleteIndex === -1) {
+        if (!user.batchList.some(batch => batch.equals(req.params.batchId))) {
           throw httpError(400, 'Batch does not belong to user');
         }
 
@@ -97,9 +137,9 @@ processRouter.route('/batch/:batchId')
               throw httpError(404, 'Batch not found');
             }
 
-            user.activeBatchList.splice(toDeleteIndex, 1);
+            user.batchList.pull(req.params.batchId);
             return user.save()
-              .then(_userDBRes => {
+              .then(() => {
                 res.statusCode = 200;
                 res.setHeader('content-type', 'application/json');
                 res.json(dbres);
@@ -114,18 +154,18 @@ processRouter.route('/batch/:batchId/step/:stepId')
     User.findById(req.user.id)
       .then(user => {
         if (user === null) {
-          throw throwError(404, 'User not found');
+          throw httpError(404, 'User not found');
         }
 
-        if (user.activeBatchList.findIndex(item => item.equals(req.params.batchId)) === -1) {
-          throw throwError(400, 'Batch does not belong to user');
+        if (user.batchList.findIndex(item => item.equals(req.params.batchId)) === -1) {
+          throw httpError(400, 'Batch does not belong to user');
         }
 
         return Batch.findById(req.params.batchId)
           .then(batch => {
-            const step = batch.schedule.find(_step => _step.equals(req.params.stepId));
+            const step = batch.process.schedule.find(_step => _step.equals(req.params.stepId));
             if (step === undefined) {
-              throw throwError(404, 'Step not found');
+              throw httpError(404, 'Step not found');
             }
 
             res.statusCode = 200;
@@ -133,11 +173,11 @@ processRouter.route('/batch/:batchId/step/:stepId')
             res.json(step);
           });
       })
-      .catch(next)
+      .catch(next);
   });
 
 processRouter.route('/user/:userId/master/:recipeMasterId/variant/:recipeVariantId')
-  .get(authenticate.verifyUser, (req, res, next) => {
+  .post(authenticate.verifyUser, (req, res, next) => {
     Recipe.findOne({
       $and: [
         { _id: req.params.recipeMasterId },
@@ -147,7 +187,7 @@ processRouter.route('/user/:userId/master/:recipeMasterId/variant/:recipeVariant
     .then(recipeMaster => {
 
       if (recipeMaster === null) {
-        throw throwError(404, 'Recipe not found');
+        throw httpError(404, 'Recipe not found');
       }
 
       // Requesting user can use a recipe if:
@@ -161,45 +201,34 @@ processRouter.route('/user/:userId/master/:recipeMasterId/variant/:recipeVariant
           req.params.recipeMasterId
         )
       ) {
-        throw throwError(400, 'Recipe is private');
+        throw httpError(400, 'Recipe is private');
       }
 
-      const recipe = recipeMaster.variants.find(variant => variant.equals(req.params.recipeVariantId));
+      const recipe = recipeMaster.variants.find(variant => {
+        return variant.equals(req.params.recipeVariantId)
+      });
+
       if (recipe === undefined) {
-        throw throwError(404, 'Recipe variant not found');
+        throw httpError(404, 'Recipe variant not found');
       }
 
-      return Batch.create(
-        {
-          owner: req.user.id,
-          recipe: recipe._id,
-          schedule: Array.from(recipe.processSchedule, process => {
-              const copy = {};
-              for (const key in process) {
-                if (key !== '_id') {
-                  copy[key] = process[key];
-                }
+      return Batch.create(req.body)
+        .then(newBatch => {
+          return User.findById(req.user.id)
+            .then(user => {
+              if (user === null) {
+                throw httpError(404, 'User not found');
               }
-              return copy;
-          })
-        }
-      )
-      .then(newBatch => {
-        return User.findById(req.user.id)
-          .then(user => {
-            if (user === null) {
-              throw throwError(404, 'User not found');
-            }
 
-            user.activeBatchList.push(newBatch);
-            return user.save();
-          })
-          .then(() => {
-            res.statusCode = 201;
-            res.setHeader('content-type', 'application/json');
-            res.json(newBatch);
-          });
-      })
+              user.batchList.push(newBatch);
+              return user.save();
+            })
+            .then(() => {
+              res.statusCode = 201;
+              res.setHeader('content-type', 'application/json');
+              res.json(newBatch);
+            });
+        });
     })
     .catch(next);
   });
