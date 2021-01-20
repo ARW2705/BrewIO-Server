@@ -2,7 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const storeDir = '../../brew-io-uploads/images';
+const storeDir = '../../../brew-io-uploads/images';
 
 exports.storeImage = (file) => {
   return new Promise((resolve, reject) => {
@@ -28,7 +28,8 @@ exports.deleteTmpImage = (filePath) => {
     fs.unlink(filePath, (error) => {
       if (error) {
         console.log('Image file removal error', error);
-        reject(error);
+        // resolve(error);
+        resolve(error);
       }
       resolve(null);
     });
