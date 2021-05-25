@@ -28,6 +28,8 @@ const hopsRouter = require('./routes/library/hops');
 const yeastRouter = require('./routes/library/yeast');
 const styleRouter = require('./routes/library/style');
 const inventoryRouter = require('./routes/inventory');
+const imageRouter = require('./routes/images/images');
+const adminRouter = require('./routes/admin');
 
 
 /* Setup MongoDB connection */
@@ -71,6 +73,8 @@ app.use(`/${apiVersion}/users`, usersRouter);
 app.use(`/${apiVersion}/recipes`, recipeRouter);
 app.use(`/${apiVersion}/process`, processRouter);
 app.use(`/${apiVersion}/inventory`, inventoryRouter);
+app.use(`/${apiVersion}/images`, imageRouter);
+app.use(`/${apiVersion}/admin`, adminRouter);
 
 app.use((err, req, res, next) => {
   if (err.name === 'ValidationError' || err.name === 'MongoError') {
@@ -94,7 +98,8 @@ app.use(function(err, req, res, next) {
   console.log('Error', err);
   // set locals, only providing error in development
   res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  res.locals.error = {};
+  // res.locals.error = req.app.get('env') === 'development' ? err : {};
 
   // render the error page
   res.status(err.status || 500);
