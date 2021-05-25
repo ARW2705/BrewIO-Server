@@ -26,6 +26,9 @@ processRouter.route('/batch')
         return Batch.find({
           _id: { $in: user.batchList }
         })
+        .populate('contextInfo.grains.grainType')
+        .populate('contextInfo.hops.hopsType')
+        .populate('contextInfo.yeast.yeastType')
         .then(batchList => {
           const activeBatches = [];
           const archiveBatches = [];
@@ -63,6 +66,16 @@ processRouter.route('/batch')
 
         return Batch.create(req.body)
           .then(newBatch => {
+            return Batch.populate(
+              newBatch,
+              [
+                { path: 'contextInfo.grains.grainType' },
+                { path: 'contextInfo.hops.hopsType' },
+                { path: 'contextInfo.yeast.yeastType' }
+              ]
+            );
+          })
+          .then(newBatch => {
             user.batchList.push(newBatch);
             return user.save()
               .then(() => {
@@ -70,7 +83,7 @@ processRouter.route('/batch')
                 res.setHeader('content-type', 'application/json');
                 res.json(newBatch);
               });
-          });
+          })
       })
       .catch(next);
   });
@@ -84,6 +97,9 @@ processRouter.route('/batch/:batchId')
         }
 
         return Batch.findById(req.params.batchId)
+          .populate('contextInfo.grains.grainType')
+          .populate('contextInfo.hops.hopsType')
+          .populate('contextInfo.yeast.yeastType')
           .then(batch => {
             if (batch === null) {
               throw httpError(404, 'Batch not found');
@@ -112,6 +128,9 @@ processRouter.route('/batch/:batchId')
             req.body,
             { new: true }
           )
+          .populate('contextInfo.grains.grainType')
+          .populate('contextInfo.hops.hopsType')
+          .populate('contextInfo.yeast.yeastType')
           .then(updatedBatch => {
             res.statusCode = 200;
             res.setHeader('content-type', 'application/json');
@@ -186,7 +205,7 @@ processRouter.route('/user/:userId/master/:recipeMasterId/variant/:recipeVariant
     })
     .then(recipeMaster => {
 
-      if (recipeMaster === null) {
+      if (!recipeMaster) {
         throw httpError(404, 'Recipe not found');
       }
 
@@ -204,30 +223,48 @@ processRouter.route('/user/:userId/master/:recipeMasterId/variant/:recipeVariant
         throw httpError(400, 'Recipe is private');
       }
 
-      const recipe = recipeMaster.variants.find(variant => {
-        return variant.equals(req.params.recipeVariantId)
-      });
+      let recipe;
+      try {
+        recipe = recipeMaster.variants.find(variant => {
+          return variant.cid === req.params.recipeVariantId
+            || variant._id === req.params.recipeVariantId
+            || variant.equals(req.params.recipeVariantId);
+        });
+      } catch (error) {
+        console.log('Recipe variant error', error);
+        recipe = null;
+      }
 
-      if (recipe === undefined) {
+      if (!recipe) {
         throw httpError(404, 'Recipe variant not found');
       }
 
       return Batch.create(req.body)
         .then(newBatch => {
-          return User.findById(req.user.id)
-            .then(user => {
-              if (user === null) {
-                throw httpError(404, 'User not found');
-              }
+          return Batch.populate(
+            newBatch,
+            [
+              { path: 'contextInfo.grains.grainType' },
+              { path: 'contextInfo.hops.hopsType' },
+              { path: 'contextInfo.yeast.yeastType' }
+            ]
+          );
+        });
+    })
+    .then(newBatch => {
+      return User.findById(req.user.id)
+        .then(user => {
+          if (user === null) {
+            throw httpError(404, 'User not found');
+          }
 
-              user.batchList.push(newBatch);
-              return user.save();
-            })
-            .then(() => {
-              res.statusCode = 201;
-              res.setHeader('content-type', 'application/json');
-              res.json(newBatch);
-            });
+          user.batchList.push(newBatch);
+          return user.save();
+        })
+        .then(() => {
+          res.statusCode = 201;
+          res.setHeader('content-type', 'application/json');
+          res.json(newBatch);
         });
     })
     .catch(next);
