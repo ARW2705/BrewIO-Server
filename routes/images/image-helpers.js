@@ -23,12 +23,12 @@ exports.storeImage = (file) => {
   });
 };
 
-exports.deleteTmpImage = (filePath) => {
+exports.deleteImage = (filename) => {
+  const filePath = path.join(__dirname, `${storeDir}/${filename}.jpg`);
   return new Promise((resolve, reject) => {
     fs.unlink(filePath, (error) => {
       if (error) {
         console.log('Image file removal error', error);
-        // resolve(error);
         resolve(error);
       }
       resolve(null);
