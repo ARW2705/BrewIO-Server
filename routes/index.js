@@ -4,7 +4,9 @@ const authenticate = require('../authenticate');
 const router = express.Router();
 
 router.get('/', (req, res, next) => {
-  res.sendStatus(400);
+  res.statusCode = 400;
+  res.setHeader('content-type', 'application/json');
+  res.json({ error: 'Invalid route' });
 });
 
 module.exports = router;
