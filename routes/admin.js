@@ -145,6 +145,25 @@ adminRouter.route('/inventory/:itemId')
 
 
 // User routes
+adminRouter.route('/user')
+  .get(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+    User.find({})
+      .then(users => {
+        users.forEach(user => {
+          if (user.hash) {
+            delete user.hash;
+          }
+          if (user.salt) {
+            delete user.salt;
+          }
+        });
+
+        res.statusCode = 200;
+        res.setHeader('content-type', 'application/json');
+        res.json(users);
+      })
+  });
+
 adminRouter.route('/user/:userId')
   .get(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     User.findById(req.params.userId)
@@ -191,7 +210,7 @@ adminRouter.route('/user/:userId')
         if (user) {
           return Promise.all([
             Recipe.deleteMany({ _id: { $in: user.masterList } }),
-            Batch.deleteMany({ _id: { $in: user.batchlist } }),
+            Batch.deleteMany({ _id: { $in: user.batchList } }),
             Inventory.deleteMany({ _id: { $in: user.inventoryList } })
           ]);
         } else {
@@ -262,3 +281,5 @@ adminRouter.route('/user/:userId/inventory')
       })
       .catch(next);
   });
+
+module.exports = adminRouter;
