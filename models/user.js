@@ -3,7 +3,8 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const passportLocalMongoose = require('passport-local-mongoose');
-const SelectedUnitsSchema = require('./units');
+const imageSchema = require('./image');
+const selectedUnitsSchema = require('./units');
 
 const userSchema = new Schema({
   cid: {
@@ -33,17 +34,11 @@ const userSchema = new Schema({
     default: 'english standard'
   },
   units: {
-    type: SelectedUnitsSchema,
+    type: selectedUnitsSchema,
     required: true
   },
-  userImageURL: {
-    type: String,
-    default: ''
-  },
-  labelImageURL: {
-    type: String,
-    default: ''
-  },
+  userImage: imageSchema,
+  breweryLabelImage: imageSchema,
   batchList: [
     {
       type: Schema.Types.ObjectId,

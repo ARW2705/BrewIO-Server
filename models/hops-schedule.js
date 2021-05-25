@@ -27,6 +27,8 @@ const hopsScheduleSchema = new Schema({
   notes: [{
     type: String
   }]
+}, {
+  _id: false
 });
 
 module.exports = hopsScheduleSchema;

@@ -13,39 +13,8 @@ const processSchema = new Schema({
   },
   schedule: [ stepSchema ],
   alerts: [ alertSchema ]
-  // cid: {
-  //   type: String,
-  //   default: ''
-  // },
-  // type: {
-  //   type: String,
-  //   required: true
-  // },
-  // name: {
-  //   type: String,
-  //   required: true
-  // },
-  // description: {
-  //   type: String
-  // },
-  // splitInterval: {
-  //   type: Number,
-  //   default: 1
-  // },
-  // duration: {
-  //   type: Number,
-  //   default: 0
-  // },
-  // concurrent: {
-  //   type: Boolean,
-  //   default: false
-  // },
-  // startDatetime: {
-  //   type: Date
-  // },
-  // expectedDuration: {
-  //   type: Number
-  // }
+}, {
+  _id: false
 });
 
 module.exports = processSchema;

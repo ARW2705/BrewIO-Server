@@ -29,19 +29,13 @@ const batchSchema = new Schema({
     type: Boolean,
     default: false
   },
+  archiveDate: {
+    type: String,
+    default: ''
+  },
   annotations: annotationsSchema,
   process: processSchema,
   contextInfo: contextSchema
-  // currentStep: {
-  //   type: Number,
-  //   default: 0
-  // },
-  // alerts: [ alertSchema ],
-  // recipe: {
-  //   type: String,
-  //   required: true
-  // },
-  // schedule: [ processSchema ]
 }, {
   timestamps: true
 });

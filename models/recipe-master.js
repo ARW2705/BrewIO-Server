@@ -2,7 +2,7 @@
 
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-
+const imageSchema = require('./image');
 const recipeVariant = require('./recipe-variant');
 
 const recipeSchema = new Schema({
@@ -38,10 +38,7 @@ const recipeSchema = new Schema({
     type: Boolean,
     default: false
   },
-  labelImageURL: {
-    type: String,
-    default: ''
-  },
+  labelImage: imageSchema,
   variants: [ recipeVariant ]
 }, {
   timestamps: true

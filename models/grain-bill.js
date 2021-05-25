@@ -24,6 +24,8 @@ const grainBillSchema = new Schema({
   notes: [{
     type: String
   }]
+}, {
+  _id: false
 });
 
 module.exports = grainBillSchema;

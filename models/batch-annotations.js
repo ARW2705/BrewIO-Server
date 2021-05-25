@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const primaryValuesSchema = require('./primary-values');
-const unitsSchema = require('./units');
 
 const annotationsSchema = new Schema({
   styleId: {
@@ -12,7 +11,6 @@ const annotationsSchema = new Schema({
     ref: 'Style',
     required: true
   },
-  units: unitsSchema,
   targetValues: primaryValuesSchema,
   measuredValues: primaryValuesSchema,
   notes: [{
@@ -21,6 +19,8 @@ const annotationsSchema = new Schema({
   packagingDate: {
     type: Date
   }
+}, {
+  _id: false
 });
 
 module.exports = annotationsSchema;

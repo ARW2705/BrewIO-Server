@@ -37,6 +37,8 @@ const stepSchema = new Schema({
   expectedDuration: {
     type: Number
   }
+}, {
+  _id: false
 });
 
 module.exports = stepSchema;

@@ -19,6 +19,8 @@ const unitSchema = new Schema({
   symbol: {
     type: String
   }
+}, {
+  _id: false
 });
 
 const selectedUnitsSchema = new Schema({
@@ -50,6 +52,8 @@ const selectedUnitsSchema = new Schema({
     type: unitSchema,
     required: true
   }
+}, {
+  _id: false
 });
 
 module.exports = selectedUnitsSchema;

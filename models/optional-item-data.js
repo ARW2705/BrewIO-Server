@@ -2,6 +2,7 @@
 
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const imageSchema = require('./image');
 
 const optionalItemDataSchema = new Schema({
   batchId: {
@@ -10,24 +11,22 @@ const optionalItemDataSchema = new Schema({
   supplierURL: {
     type: String
   },
-  supplierLabelImageURL: {
-    type: String
-  },
+  supplierLabelImage: imageSchema,
   itemIBU: {
     type: String
   },
   itemSRM: {
     type: String
   },
-  itemLabelImageURL: {
-    type: String
-  },
+  itemLabelImage: imageSchema,
   itemSubname: {
     type: String
   },
   packagingDate: {
     type: String
   }
+}, {
+  _id: false
 });
 
 module.exports = optionalItemDataSchema;

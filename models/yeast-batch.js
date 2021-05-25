@@ -23,6 +23,8 @@ const yeastBatchSchema = new Schema({
   notes: [{
     type: String
   }]
+}, {
+  _id: false
 });
 
 module.exports = yeastBatchSchema;
