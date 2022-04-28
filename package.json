@@ -6,7 +6,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
-    "async": "^2.6.2",
+    "async": "^2.6.4",
     "bluebird": "^3.5.3",
     "body-parser": "^1.18.3",
     "debug": "~2.6.9",
